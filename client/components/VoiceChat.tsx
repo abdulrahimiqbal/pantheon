@@ -2,14 +2,29 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Volume2, VolumeX, Settings, Shield, Radio } from 'lucide-react'
+import { 
+  Mic, 
+  MicOff, 
+  Volume2, 
+  VolumeX, 
+  Settings, 
+  Radio, 
+  Shield, 
+  CheckCircle, 
+  AlertCircle, 
+  Loader2, 
+  Clock,
+  X 
+} from 'lucide-react'
 import { elevenLabsService, type ElevenLabsVoice } from '../services/elevenlabs'
+import { ScientificProcessingResult } from '../services/gemini'
 
 interface VoiceChatProps {
   isOpen: boolean
   onClose: () => void
   onSendMessage: (message: string) => void
   onGetAIResponse?: (message: string) => Promise<string> | string
+  onGetScientificResponse?: (message: string) => Promise<ScientificProcessingResult>
 }
 
 interface VoiceSettings {
@@ -19,7 +34,15 @@ interface VoiceSettings {
   speakerVerification: boolean
 }
 
-export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIResponse }: VoiceChatProps) {
+type StatusType = 'idle' | 'loading' | 'success' | 'error' | 'processing'
+
+interface StatusIndicator {
+  type: StatusType
+  message: string
+  details?: string
+}
+
+export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIResponse, onGetScientificResponse }: VoiceChatProps) {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [audioLevel, setAudioLevel] = useState(0)
@@ -49,6 +72,16 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
   const [isReadingScript, setIsReadingScript] = useState(false)
   const [scriptProgress, setScriptProgress] = useState(0)
   const [currentVoiceId, setCurrentVoiceId] = useState('')
+  
+  // Enhanced status tracking
+  const [mainStatus, setMainStatus] = useState<StatusIndicator>({ type: 'idle', message: 'Ready to chat' })
+  const [voiceLoadingStatus, setVoiceLoadingStatus] = useState<StatusIndicator>({ type: 'idle', message: 'Voices ready' })
+  const [cloneOperationStatus, setCloneOperationStatus] = useState<StatusIndicator>({ type: 'idle', message: 'Ready to clone' })
+  const [ttsStatus, setTtsStatus] = useState<StatusIndicator>({ type: 'idle', message: 'Text-to-speech ready' })
+  const [recordingStatus, setRecordingStatus] = useState<StatusIndicator>({ type: 'idle', message: 'Microphone ready' })
+  const [selectedVoiceName, setSelectedVoiceName] = useState('')
+  const [hasRecordedAudio, setHasRecordedAudio] = useState(false)
+  const [cloneProgress, setCloneProgress] = useState(0)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -57,18 +90,61 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
   const analyserRef = useRef<AnalyserNode | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // Status icon helper
+  const getStatusIcon = (status: StatusIndicator) => {
+    switch (status.type) {
+      case 'loading':
+      case 'processing':
+        return <Loader2 className="w-4 h-4 animate-spin text-orange-primary" />
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-400" />
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-400" />
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />
+    }
+  }
+
   // Load available voices from ElevenLabs
   useEffect(() => {
     const loadVoices = async () => {
       setIsLoadingVoices(true)
+      setVoiceLoadingStatus({ type: 'loading', message: 'Loading available voices...' })
+      
       try {
         const voices = await elevenLabsService.getVoices()
         setAvailableVoices(voices)
-        if (voices.length > 0 && !voiceSettings.voiceId) {
-          setVoiceSettings(prev => ({ ...prev, voiceId: voices[0].voice_id }))
+        
+        // Find the currently selected voice or use the first available voice
+        const currentVoice = voices.find(v => v.voice_id === voiceSettings.voiceId) || voices[0]
+        
+        if (currentVoice) {
+          // Update voice settings if the current voice ID doesn't exist in available voices
+          if (!voices.find(v => v.voice_id === voiceSettings.voiceId)) {
+            setVoiceSettings(prev => ({ ...prev, voiceId: currentVoice.voice_id }))
+          }
+          setCurrentVoiceId(currentVoice.voice_id)
+          setSelectedVoiceName(currentVoice.name)
+          
+          setVoiceLoadingStatus({ 
+            type: 'success', 
+            message: `${voices.length} voices loaded successfully`,
+            details: `Selected voice: ${currentVoice.name}` 
+          })
+        } else {
+          setVoiceLoadingStatus({ 
+            type: 'error', 
+            message: 'No voices available', 
+            details: 'Check your ElevenLabs API key' 
+          })
         }
       } catch (error) {
         console.error('Failed to load voices:', error)
+        setVoiceLoadingStatus({ 
+          type: 'error', 
+          message: 'Failed to load voices', 
+          details: 'Check your ElevenLabs API key' 
+        })
       } finally {
         setIsLoadingVoices(false)
       }
@@ -214,22 +290,46 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
 
   const handleVoiceInput = async (text: string) => {
     console.log('Voice input received:', text)
+    setMainStatus({ type: 'processing', message: 'Processing your message...', details: text.substring(0, 50) + (text.length > 50 ? '...' : '') })
+    
     onSendMessage(text) // Send to main chat system
     setTranscript('')
+    setIsProcessing(true)
     
     // Get AI response from the main chat system
     let aiResponse = `I heard you say: "${text}". This is a placeholder response.`
     
-    if (onGetAIResponse) {
+    // Prioritize scientific processing if available
+    if (onGetScientificResponse) {
       try {
+        setMainStatus({ type: 'processing', message: 'Initializing scientific analysis...' })
+        const scientificResult = await onGetScientificResponse(text)
+        
+        // Wait for complete scientific analysis including all metadata
+        setMainStatus({ type: 'processing', message: 'Scientific analysis complete. Preparing voice response...' })
+        
+        // Use the main response for voice synthesis
+        aiResponse = scientificResult.response
+        setMainStatus({ type: 'success', message: 'Scientific analysis complete' })
+      } catch (error) {
+        console.error('Failed to get scientific response:', error)
+        aiResponse = 'Sorry, I encountered an error during scientific analysis.'
+        setMainStatus({ type: 'error', message: 'Failed to complete scientific analysis' })
+      }
+    } else if (onGetAIResponse) {
+      try {
+        setMainStatus({ type: 'processing', message: 'Generating AI response...' })
         const response = await onGetAIResponse(text)
         aiResponse = response
+        setMainStatus({ type: 'success', message: 'AI response generated' })
       } catch (error) {
         console.error('Failed to get AI response:', error)
         aiResponse = 'Sorry, I encountered an error processing your request.'
+        setMainStatus({ type: 'error', message: 'Failed to generate AI response' })
       }
     }
     
+    setIsProcessing(false)
     // Convert AI response to speech
     await speakText(aiResponse)
   }
@@ -259,6 +359,20 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
     setIsSpeaking(true)
     setIsBreathing(true)
     
+    const selectedVoice = availableVoices.find(v => v.voice_id === voiceSettings.voiceId)
+    console.log('TTS Debug:', {
+      voiceId: voiceSettings.voiceId,
+      selectedVoice: selectedVoice,
+      availableVoicesCount: availableVoices.length,
+      text: text.substring(0, 50) + '...'
+    })
+    
+    setTtsStatus({ 
+      type: 'processing', 
+      message: `Converting to speech...`,
+      details: `Using ${selectedVoice?.name || 'Unknown Voice'} (${voiceSettings.voiceId})` 
+    })
+    
     try {
       // Use ElevenLabs TTS
       const audioBlob = await elevenLabsService.textToSpeech({
@@ -270,6 +384,8 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
           use_speaker_boost: true
         }
       })
+      
+      setTtsStatus({ type: 'success', message: 'Audio generated, now playing...' })
 
       // Play the audio
       const audioUrl = URL.createObjectURL(audioBlob)
@@ -304,6 +420,8 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
         setIsBreathing(false)
         setGlobeScale(1)
         URL.revokeObjectURL(audioUrl)
+        setTtsStatus({ type: 'success', message: 'Speech completed' })
+        setMainStatus({ type: 'idle', message: 'Ready to chat' })
       }
       
       audio.onerror = () => {
@@ -312,12 +430,14 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
         setIsBreathing(false)
         setGlobeScale(1)
         URL.revokeObjectURL(audioUrl)
+        setTtsStatus({ type: 'error', message: 'Audio playback failed' })
       }
       
       await audio.play()
       
     } catch (error) {
       console.error('Error with ElevenLabs TTS:', error)
+      setTtsStatus({ type: 'error', message: 'ElevenLabs TTS failed, using fallback...' })
       
       // Fallback to Web Speech API
       if ('speechSynthesis' in window) {
@@ -328,12 +448,15 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
         
         utterance.onstart = () => {
           setIsBreathing(true)
+          setTtsStatus({ type: 'processing', message: 'Using browser speech synthesis' })
         }
         
         utterance.onend = () => {
           setIsSpeaking(false)
           setIsBreathing(false)
           setGlobeScale(1)
+          setTtsStatus({ type: 'success', message: 'Speech completed (fallback)' })
+          setMainStatus({ type: 'idle', message: 'Ready to chat' })
         }
         
         speechSynthesis.speak(utterance)
@@ -341,6 +464,7 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
         setIsSpeaking(false)
         setIsBreathing(false)
         setGlobeScale(1)
+        setTtsStatus({ type: 'error', message: 'No speech synthesis available' })
       }
     }
   }
@@ -354,16 +478,45 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
   // Load cloned voices
   const loadClonedVoices = async () => {
     try {
+      setCloneOperationStatus({ type: 'loading', message: 'Loading cloned voices...' })
       const voices = await elevenLabsService.getClonedVoices()
       setClonedVoices(voices)
+      setCloneOperationStatus({ 
+        type: 'success', 
+        message: `${voices.length} cloned voices loaded`,
+        details: voices.length > 0 ? `Latest: ${voices[0]?.name}` : 'No cloned voices yet'
+      })
     } catch (error) {
       console.error('Failed to load cloned voices:', error)
+      setCloneOperationStatus({ type: 'error', message: 'Failed to load cloned voices' })
     }
+  }
+
+  // Select voice with feedback
+  const selectVoice = (voiceId: string, voiceName: string) => {
+    console.log('Voice Selection Debug:', {
+      oldVoiceId: voiceSettings.voiceId,
+      newVoiceId: voiceId,
+      voiceName: voiceName
+    })
+    
+    setVoiceSettings(prev => ({ ...prev, voiceId }))
+    setCurrentVoiceId(voiceId)
+    setSelectedVoiceName(voiceName)
+    setMainStatus({ type: 'success', message: `Voice changed to ${voiceName}` })
+    
+    // Clear status after 3 seconds
+    setTimeout(() => {
+      setMainStatus({ type: 'idle', message: 'Ready to chat' })
+    }, 3000)
   }
 
   // Start recording for voice cloning
   const startCloneRecording = async () => {
     try {
+      setRecordingStatus({ type: 'loading', message: 'Accessing microphone...' })
+      setCloneOperationStatus({ type: 'processing', message: 'Preparing to record voice sample...' })
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       
       mediaRecorderRef.current = new MediaRecorder(stream)
@@ -378,22 +531,55 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
       mediaRecorderRef.current.start()
       setIsRecordingForClone(true)
       setCloneRecordingTime(0)
+      setHasRecordedAudio(false)
+      
+      setRecordingStatus({ type: 'processing', message: 'Recording in progress...' })
+      setCloneOperationStatus({ 
+        type: 'processing', 
+        message: 'Recording voice sample...', 
+        details: 'Speak clearly and naturally for best results' 
+      })
       
       // Timer for recording duration
       const timer = setInterval(() => {
         setCloneRecordingTime(prev => {
-          if (prev >= 30) { // Max 30 seconds
+          const newTime = prev + 1
+          setCloneProgress((newTime / 30) * 100) // Progress out of 30 seconds
+          
+          if (newTime >= 10 && !hasRecordedAudio) {
+            setHasRecordedAudio(true)
+            setCloneOperationStatus({ 
+              type: 'processing', 
+              message: 'Good! Keep speaking...', 
+              details: `${newTime}s recorded (minimum 10s reached)` 
+            })
+          } else if (newTime < 10) {
+            setCloneOperationStatus({ 
+              type: 'processing', 
+              message: 'Recording voice sample...', 
+              details: `${newTime}s recorded (need at least 10s)` 
+            })
+          } else {
+            setCloneOperationStatus({ 
+              type: 'processing', 
+              message: 'Recording voice sample...', 
+              details: `${newTime}s recorded (${30 - newTime}s remaining)` 
+            })
+          }
+          
+          if (newTime >= 30) { // Max 30 seconds
             stopCloneRecording()
             clearInterval(timer)
             return 30
           }
-          return prev + 1
+          return newTime
         })
       }, 1000)
       
     } catch (error) {
       console.error('Error starting clone recording:', error)
-      alert('Could not access microphone for voice cloning')
+      setRecordingStatus({ type: 'error', message: 'Microphone access denied' })
+      setCloneOperationStatus({ type: 'error', message: 'Could not access microphone for voice cloning' })
     }
   }
 
@@ -402,26 +588,48 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
     if (mediaRecorderRef.current && isRecordingForClone) {
       mediaRecorderRef.current.stop()
       setIsRecordingForClone(false)
+      setRecordingStatus({ type: 'success', message: 'Recording completed' })
+      
+      if (cloneRecordingTime >= 10) {
+        setHasRecordedAudio(true)
+        setCloneOperationStatus({ 
+          type: 'success', 
+          message: 'Voice sample recorded successfully!', 
+          details: `${cloneRecordingTime}s of audio captured` 
+        })
+      } else {
+        setCloneOperationStatus({ 
+          type: 'error', 
+          message: 'Recording too short', 
+          details: 'Need at least 10 seconds for voice cloning' 
+        })
+        setHasRecordedAudio(false)
+      }
+      
+      setCloneProgress(0)
     }
   }
 
   // Clone voice with recorded audio
   const cloneVoice = async () => {
     if (!cloneVoiceName.trim()) {
-      alert('Please enter a name for your cloned voice')
+      setCloneOperationStatus({ type: 'error', message: 'Please enter a name for your cloned voice' })
       return
     }
     
-    if (audioChunksRef.current.length === 0) {
-      alert('No audio recorded for cloning')
+    if (audioChunksRef.current.length === 0 || !hasRecordedAudio) {
+      setCloneOperationStatus({ type: 'error', message: 'No valid audio recorded for cloning' })
       return
     }
     
     setIsCloning(true)
+    setCloneOperationStatus({ type: 'processing', message: 'Cloning your voice...', details: 'This may take a few moments' })
     
     try {
       // Create audio blob from recorded chunks
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+      
+      setCloneOperationStatus({ type: 'processing', message: 'Uploading voice sample...', details: 'Processing audio data' })
       
       // Clone the voice
       const voiceId = await elevenLabsService.cloneVoice(
@@ -430,24 +638,41 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
         `Custom cloned voice: ${cloneVoiceName}`
       )
       
+      setCloneOperationStatus({ type: 'processing', message: 'Voice cloned! Updating settings...', details: 'Refreshing voice list' })
+      
       // Update voice settings to use the new cloned voice
       setVoiceSettings(prev => ({ ...prev, voiceId }))
+      setCurrentVoiceId(voiceId)
+      setSelectedVoiceName(cloneVoiceName)
       
       // Refresh voice lists
       await loadClonedVoices()
       const allVoices = await elevenLabsService.getVoices()
       setAvailableVoices(allVoices)
       
-      // Close dialog and reset
-      setShowCloneDialog(false)
-      setCloneVoiceName('')
-      audioChunksRef.current = []
+      setCloneOperationStatus({ 
+        type: 'success', 
+        message: `Voice "${cloneVoiceName}" cloned successfully!`, 
+        details: 'Voice is now selected and ready to use' 
+      })
       
-      alert(`Voice "${cloneVoiceName}" cloned successfully!`)
+      // Close dialog and reset after a delay
+      setTimeout(() => {
+        setShowCloneDialog(false)
+        setCloneVoiceName('')
+        audioChunksRef.current = []
+        setHasRecordedAudio(false)
+        setCloneRecordingTime(0)
+        setCloneOperationStatus({ type: 'idle', message: 'Ready to clone' })
+      }, 2000)
       
     } catch (error) {
       console.error('Voice cloning failed:', error)
-      alert('Voice cloning failed. Please try again.')
+      setCloneOperationStatus({ 
+        type: 'error', 
+        message: 'Voice cloning failed', 
+        details: error instanceof Error ? error.message : 'Please try again' 
+      })
     } finally {
       setIsCloning(false)
     }
@@ -594,14 +819,110 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                 {isSpeaking && (
                   <Volume2 className="w-6 h-6 text-white/80" />
                 )}
+                {isProcessing && (
+                  <Loader2 className="w-6 h-6 text-white/80 animate-spin" />
+                )}
               </div>
             </div>
           </div>
 
+          {/* Comprehensive Status Panel */}
+          <div className="mb-6 space-y-3">
+            {/* Main Status */}
+            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(mainStatus)}
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">{mainStatus.message}</p>
+                  {mainStatus.details && (
+                    <p className="text-gray-400 text-xs">{mainStatus.details}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Selection Status */}
+            {selectedVoiceName && (
+              <div className="bg-black/20 backdrop-blur-sm border border-orange-primary/20 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  <Volume2 className="w-4 h-4 text-orange-primary" />
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">Selected Voice</p>
+                    <p className="text-orange-primary text-xs">{selectedVoiceName}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TTS Status */}
+            {(ttsStatus.type !== 'idle' || isSpeaking) && (
+              <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  {getStatusIcon(ttsStatus)}
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{ttsStatus.message}</p>
+                    {ttsStatus.details && (
+                      <p className="text-gray-400 text-xs">{ttsStatus.details}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recording Status */}
+            {(recordingStatus.type !== 'idle' || isRecordingForClone) && (
+              <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  {getStatusIcon(recordingStatus)}
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{recordingStatus.message}</p>
+                    {isRecordingForClone && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-400 mb-1">
+                          <span>{cloneRecordingTime}s</span>
+                          <span>{hasRecordedAudio ? 'Ready to clone' : 'Need 10s minimum'}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              hasRecordedAudio ? 'bg-green-400' : 'bg-orange-primary'
+                            }`}
+                            style={{ width: `${Math.min(cloneProgress, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Clone Operation Status */}
+            {cloneOperationStatus.type !== 'idle' && (
+              <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  {getStatusIcon(cloneOperationStatus)}
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{cloneOperationStatus.message}</p>
+                    {cloneOperationStatus.details && (
+                      <p className="text-gray-400 text-xs">{cloneOperationStatus.details}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Transcript */}
           {transcript && (
-            <div className="mb-6 p-4 bg-background-tertiary rounded-lg">
-              <p className="text-white text-sm">{transcript}</p>
+            <div className="mb-6 p-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <Mic className="w-4 h-4 text-orange-primary mt-0.5" />
+                <div>
+                  <p className="text-gray-400 text-xs mb-1">You said:</p>
+                  <p className="text-white text-sm">{transcript}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -648,9 +969,17 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-6 p-4 bg-background-tertiary rounded-lg border border-orange-primary/10"
+                className="mt-6 p-4 bg-black/20 backdrop-blur-sm border border-orange-primary/20 rounded-lg"
               >
-                <h3 className="text-white font-medium mb-4">Voice Settings</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-medium">Voice Settings</h3>
+                  {voiceLoadingStatus.type !== 'idle' && (
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(voiceLoadingStatus)}
+                      <span className="text-xs text-gray-400">{voiceLoadingStatus.message}</span>
+                    </div>
+                  )}
+                </div>
                 
                 <div className="space-y-4">
                   <div>
@@ -659,11 +988,25 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                     </label>
                     <select
                       value={voiceSettings.voiceId}
-                      onChange={(e) => setVoiceSettings(prev => ({
-                        ...prev,
-                        voiceId: e.target.value
-                      }))}
-                      className="w-full bg-background-primary border border-orange-primary/20 rounded-lg px-3 py-2 text-white text-sm"
+                      onChange={(e) => {
+                        const newVoiceId = e.target.value
+                        const selectedVoice = availableVoices.find(v => v.voice_id === newVoiceId)
+                        setVoiceSettings(prev => ({
+                          ...prev,
+                          voiceId: newVoiceId
+                        }))
+                        setSelectedVoiceName(selectedVoice?.name || '')
+                        setMainStatus({ 
+                          type: 'success', 
+                          message: `Voice changed to ${selectedVoice?.name || 'Unknown'}`,
+                          details: 'Voice selection updated'
+                        })
+                        // Clear status after 3 seconds
+                        setTimeout(() => {
+                          setMainStatus({ type: 'idle', message: 'Ready to chat' })
+                        }, 3000)
+                      }}
+                      className="w-full bg-black/20 backdrop-blur-sm border border-orange-primary/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-primary transition-colors"
                       disabled={isLoadingVoices}
                     >
                       {isLoadingVoices ? (
@@ -671,7 +1014,7 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                       ) : (
                         availableVoices.map((voice) => (
                           <option key={voice.voice_id} value={voice.voice_id}>
-                            {voice.name} ({voice.category})
+                            {voice.name} {voice.category === 'cloned' ? '🎤' : '🎭'} ({voice.category})
                           </option>
                         ))
                       )}
@@ -730,48 +1073,106 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                   {/* Voice Cloning Section */}
                   <div className="border-t border-orange-primary/10 pt-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-white font-medium text-sm">Voice Cloning</h4>
-                      <button
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-white font-medium text-sm">Voice Cloning</h4>
+                        <div className="w-5 h-5 bg-orange-primary/20 rounded-full flex items-center justify-center">
+                          <Mic className="w-3 h-3 text-orange-primary" />
+                        </div>
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setShowCloneDialog(true)}
-                        className="px-3 py-1 bg-orange-primary text-white text-xs rounded-lg hover:bg-orange-accent transition-colors"
+                        className="px-3 py-1.5 bg-gradient-to-r from-orange-primary to-orange-accent text-white text-xs rounded-lg hover:from-orange-accent hover:to-orange-primary transition-all shadow-sm font-medium"
                       >
-                        Clone Voice
-                      </button>
+                        + Clone Voice
+                      </motion.button>
                     </div>
                     
-                    {clonedVoices.length > 0 && (
+                    {clonedVoices.length > 0 ? (
                       <div>
-                        <label className="block text-gray-medium text-sm mb-2">
-                          Your Cloned Voices
+                        <label className="block text-gray-medium text-sm mb-3 flex items-center space-x-2">
+                          <span>Your Cloned Voices</span>
+                          <div className="w-5 h-5 bg-green-400/20 rounded-full flex items-center justify-center">
+                            <span className="text-green-400 text-xs font-bold">{clonedVoices.length}</span>
+                          </div>
                         </label>
                         <div className="space-y-2">
                           {clonedVoices.map((voice) => (
-                            <div key={voice.voice_id} className="flex items-center justify-between p-2 bg-background-primary rounded border border-orange-primary/10">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => setVoiceSettings(prev => ({ ...prev, voiceId: voice.voice_id }))}
-                                  className={`w-3 h-3 rounded-full border-2 ${
+                            <motion.div 
+                              key={voice.voice_id} 
+                              whileHover={{ scale: 1.02 }}
+                              className="flex items-center justify-between p-3 bg-black/20 backdrop-blur-sm rounded-lg border border-orange-primary/10 hover:border-orange-primary/30 transition-all"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <motion.button
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => {
+                                    setVoiceSettings(prev => ({ ...prev, voiceId: voice.voice_id }))
+                                    setSelectedVoiceName(voice.name)
+                                    setMainStatus({ 
+                                      type: 'success', 
+                                      message: `Switched to ${voice.name}`,
+                                      details: 'Cloned voice selected'
+                                    })
+                                    setTimeout(() => {
+                                      setMainStatus({ type: 'idle', message: 'Ready to chat' })
+                                    }, 3000)
+                                  }}
+                                  className={`w-4 h-4 rounded-full border-2 transition-all ${
                                     voiceSettings.voiceId === voice.voice_id
-                                      ? 'bg-orange-primary border-orange-primary'
-                                      : 'border-gray-medium'
+                                      ? 'bg-orange-primary border-orange-primary shadow-lg shadow-orange-primary/25'
+                                      : 'border-gray-medium hover:border-orange-primary'
                                   }`}
                                 />
-                                <span className="text-white text-sm">{voice.name}</span>
+                                <div className="flex items-center space-x-2">
+                                  <Mic className="w-3 h-3 text-orange-primary" />
+                                  <span className="text-white text-sm font-medium">{voice.name}</span>
+                                  {voiceSettings.voiceId === voice.voice_id && (
+                                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                  )}
+                                </div>
                               </div>
-                              <button
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={async () => {
-                                  if (confirm(`Delete voice "${voice.name}"?`)) {
-                                    await elevenLabsService.deleteVoice(voice.voice_id)
-                                    await loadClonedVoices()
+                                  if (confirm(`Delete voice "${voice.name}"? This action cannot be undone.`)) {
+                                    try {
+                                      await elevenLabsService.deleteVoice(voice.voice_id)
+                                      await loadClonedVoices()
+                                      setMainStatus({ 
+                                        type: 'success', 
+                                        message: `Deleted ${voice.name}`,
+                                        details: 'Voice removed successfully'
+                                      })
+                                      setTimeout(() => {
+                                        setMainStatus({ type: 'idle', message: 'Ready to chat' })
+                                      }, 3000)
+                                    } catch (error) {
+                                      setMainStatus({ 
+                                        type: 'error', 
+                                        message: 'Failed to delete voice',
+                                        details: 'Please try again'
+                                      })
+                                    }
                                   }
                                 }}
-                                className="text-red-400 hover:text-red-300 text-xs"
+                                className="text-red-400 hover:text-red-300 text-xs p-1 rounded hover:bg-red-400/10 transition-all"
                               >
-                                Delete
-                              </button>
-                            </div>
+                                🗑️
+                              </motion.button>
+                            </motion.div>
                           ))}
                         </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <div className="w-12 h-12 bg-orange-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Mic className="w-6 h-6 text-orange-primary/50" />
+                        </div>
+                        <p className="text-gray-400 text-sm">No cloned voices yet</p>
+                        <p className="text-gray-500 text-xs">Create your first voice clone above</p>
                       </div>
                     )}
                   </div>
@@ -813,11 +1214,13 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/90 backdrop-blur-sm z-60 flex items-center justify-center p-4"
             onClick={(e) => {
-              if (e.target === e.currentTarget) {
+              if (e.target === e.currentTarget && !isCloning) {
                 setShowCloneDialog(false)
                 setCloneVoiceName('')
                 setIsRecordingForClone(false)
                 setCloneRecordingTime(0)
+                setHasRecordedAudio(false)
+                setCloneOperationStatus({ type: 'idle', message: 'Ready to clone' })
               }
             }}
           >
@@ -825,15 +1228,57 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-background-secondary border border-orange-primary/20 rounded-xl p-6 w-full max-w-md"
+              className="bg-background-secondary border border-orange-primary/20 rounded-xl p-6 w-full max-w-lg"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-white font-semibold text-lg mb-4">Clone Your Voice</h3>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-primary to-orange-accent rounded-lg flex items-center justify-center">
+                    <Mic className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">Clone Your Voice</h3>
+                    <p className="text-gray-400 text-sm">Create a personalized AI voice</p>
+                  </div>
+                </div>
+                {!isCloning && (
+                  <button
+                    onClick={() => {
+                      setShowCloneDialog(false)
+                      setCloneVoiceName('')
+                      setIsRecordingForClone(false)
+                      setCloneRecordingTime(0)
+                      setHasRecordedAudio(false)
+                      setCloneOperationStatus({ type: 'idle', message: 'Ready to clone' })
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Clone Operation Status */}
+              {cloneOperationStatus.type !== 'idle' && (
+                <div className="mb-6 p-4 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {getStatusIcon(cloneOperationStatus)}
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-medium">{cloneOperationStatus.message}</p>
+                      {cloneOperationStatus.details && (
+                        <p className="text-gray-400 text-xs">{cloneOperationStatus.details}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Voice Name Input */}
                 <div>
                   <label className="block text-gray-medium text-sm mb-2">
-                    Voice Name
+                    Voice Name *
                   </label>
                   <input
                     type="text"
@@ -844,61 +1289,163 @@ export default function VoiceChat({ isOpen, onClose, onSendMessage, onGetAIRespo
                   />
                 </div>
 
+                {/* Recording Script */}
+                <div className="bg-black/20 backdrop-blur-sm border border-orange-primary/20 rounded-lg p-4">
+                  <div className="flex items-start space-x-3 mb-3">
+                    <div className="w-6 h-6 bg-orange-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs font-bold">!</span>
+                    </div>
+                    <div>
+                      <h4 className="text-white font-medium text-sm mb-2">Read This Script Aloud</h4>
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        "Hello, this is my voice for AI cloning. I'm speaking clearly and naturally 
+                        to create the best possible voice model. The quick brown fox jumps over the lazy dog. 
+                        This sentence contains every letter of the alphabet for optimal voice training."
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    💡 Tip: Speak naturally in a quiet environment for best results
+                  </div>
+                </div>
+
+                {/* Recording Controls */}
                 <div className="text-center">
-                  <p className="text-gray-medium text-sm mb-4">
-                    Record 10-30 seconds of clear speech for best results
-                  </p>
+                  <div className="mb-4">
+                    <p className="text-gray-medium text-sm mb-2">
+                      Record 10-30 seconds of clear speech
+                    </p>
+                    {isRecordingForClone && (
+                      <div className="mb-3">
+                        <div className="flex justify-between text-xs text-gray-400 mb-1">
+                          <span>{cloneRecordingTime}s recorded</span>
+                          <span className={hasRecordedAudio ? 'text-green-400' : 'text-orange-primary'}>
+                            {hasRecordedAudio ? '✓ Ready to clone' : 'Need 10s minimum'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              hasRecordedAudio ? 'bg-green-400' : 'bg-orange-primary'
+                            }`}
+                            style={{ width: `${Math.min(cloneProgress, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   {!isRecordingForClone ? (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={startCloneRecording}
                       disabled={isCloning}
-                      className="w-20 h-20 rounded-full bg-orange-primary hover:bg-orange-accent disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                      className="w-20 h-20 rounded-full bg-gradient-to-r from-orange-primary to-orange-accent hover:from-orange-accent hover:to-orange-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-lg hover:shadow-orange-primary/25"
                     >
                       <Mic className="w-8 h-8 text-white" />
-                    </button>
+                    </motion.button>
                   ) : (
                     <div className="space-y-3">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={stopCloneRecording}
-                        className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors animate-pulse"
+                        className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors shadow-lg"
+                        animate={{ 
+                          boxShadow: [
+                            "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                            "0 0 0 10px rgba(239, 68, 68, 0)",
+                            "0 0 0 0 rgba(239, 68, 68, 0)"
+                          ]
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
                       >
                         <MicOff className="w-8 h-8 text-white" />
-                      </button>
-                      <p className="text-orange-primary font-medium">
-                        Recording: {cloneRecordingTime}s / 30s
+                      </motion.button>
+                      <p className="text-red-400 font-medium animate-pulse">
+                        🔴 Recording: {cloneRecordingTime}s
                       </p>
                     </div>
                   )}
                 </div>
 
+                {/* Action Buttons */}
                 <div className="flex space-x-3">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setShowCloneDialog(false)
                       setCloneVoiceName('')
                       setIsRecordingForClone(false)
                       setCloneRecordingTime(0)
+                      setHasRecordedAudio(false)
+                      setCloneOperationStatus({ type: 'idle', message: 'Ready to clone' })
                     }}
                     disabled={isCloning}
-                    className="flex-1 px-4 py-2 bg-background-tertiary border border-orange-primary/20 text-gray-medium rounded-lg hover:bg-background-primary transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-black/20 backdrop-blur-sm border border-white/10 text-gray-300 rounded-lg hover:bg-white/5 hover:text-white transition-all disabled:opacity-50 font-medium"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={cloneVoice}
-                    disabled={isCloning || !cloneVoiceName.trim() || audioChunksRef.current.length === 0}
-                    className="flex-1 px-4 py-2 bg-orange-primary text-white rounded-lg hover:bg-orange-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    disabled={isCloning || !cloneVoiceName.trim() || !hasRecordedAudio}
+                    className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
+                      hasRecordedAudio && cloneVoiceName.trim() 
+                        ? 'bg-gradient-to-r from-orange-primary to-orange-accent hover:from-orange-accent hover:to-orange-primary text-white shadow-lg hover:shadow-orange-primary/25' 
+                        : 'bg-gray-600 text-gray-400'
+                    }`}
                   >
                     {isCloning ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Cloning...
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Cloning Voice...
                       </>
                     ) : (
-                      'Clone Voice'
+                      <>
+                        <Mic className="w-4 h-4 mr-2" />
+                        Clone Voice
+                      </>
                     )}
-                  </button>
+                  </motion.button>
+                </div>
+
+                {/* Requirements Checklist */}
+                <div className="bg-black/10 backdrop-blur-sm border border-white/5 rounded-lg p-3">
+                  <h5 className="text-white text-sm font-medium mb-2">Requirements:</h5>
+                  <div className="space-y-1 text-xs">
+                    <div className={`flex items-center space-x-2 ${
+                      cloneVoiceName.trim() ? 'text-green-400' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        cloneVoiceName.trim() ? 'bg-green-400' : 'bg-gray-600'
+                      }`} />
+                      <span>Voice name provided</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${
+                      hasRecordedAudio ? 'text-green-400' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        hasRecordedAudio ? 'bg-green-400' : 'bg-gray-600'
+                      }`} />
+                      <span>Minimum 10 seconds recorded</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${
+                      cloneRecordingTime >= 15 ? 'text-green-400' : 'text-gray-400'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full ${
+                        cloneRecordingTime >= 15 ? 'bg-green-400' : 'bg-gray-600'
+                      }`} />
+                      <span>15+ seconds for better quality (optional)</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import ResearchPanel from '@/components/ResearchPanel'
 import VisualizationPanel from '@/components/VisualizationPanel'
 import ConfigPanel from '@/components/ConfigPanel'
+import { ScientificProcessingResult } from '@/services/gemini'
 // import CursorEffect from '@/components/CursorEffect'
 
 interface Chat {
@@ -19,8 +20,9 @@ interface Chat {
 interface Message {
   id: string
   text: string
-  type: 'user' | 'assistant'
+  type: 'user' | 'assistant' | 'scientific'
   timestamp: string
+  scientificResult?: ScientificProcessingResult
 }
 
 export default function Home() {
@@ -95,7 +97,34 @@ export default function Home() {
     return responses[Math.floor(Math.random() * responses.length)]
   }
 
-  const handleSendMessage = async (chatId: string, messageText: string) => {
+  const handleSendMessage = async (chatId: string, messageText: string, scientificResult?: ScientificProcessingResult) => {
+    // Handle both regular messages and scientific results
+    if (scientificResult) {
+      // This is a scientific AI response
+      const scientificMessage: Message = {
+        id: generateMessageId(),
+        text: scientificResult.response,
+        type: 'scientific',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        scientificResult: scientificResult
+      }
+      
+      setMessages(prev => ({
+        ...prev,
+        [chatId]: [...(prev[chatId] || []), scientificMessage]
+      }))
+      
+      // Update chat's last message
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, lastMessage: 'Scientific analysis complete', timestamp: scientificMessage.timestamp }
+          : chat
+      ))
+      
+      return
+    }
+    
+    // Regular user message
     const userMessage: Message = {
       id: generateMessageId(),
       text: messageText,
@@ -115,7 +144,7 @@ export default function Home() {
         : chat
     ))
     
-    // Generate AI response
+    // Generate AI response (only for regular messages, scientific responses are handled in ResearchPanel)
     try {
       const aiResponseText = await generateAIResponse(messageText)
       const aiMessage: Message = {
