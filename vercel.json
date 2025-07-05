@@ -3,15 +3,16 @@
   "version": 2,
   "name": "pantheon",
   "functions": {
-    "orchestration/main.py": {
+    "api/index.py": {
       "maxDuration": 30
     }
   },
   "routes": [
-    { "src": "/(.*)", "dest": "/orchestration/main.py" }
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/api/index.py" }
   ],
   "env": {
-    "PYTHONPATH": "/var/task",
+    "PYTHONPATH": "/var/task:/var/task/physics_swarm",
     "TAVILY_API_KEY": "demo_key"
   },
   "regions": ["iad1"],
