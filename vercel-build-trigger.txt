@@ -1,20 +1,26 @@
-TRIGGER-016-COMPLETE-ROUTING-FIX
+TRIGGER-017-API-ROUTING-FIX
 
-Build ID: TRIGGER-016-COMPLETE-ROUTING-FIX
-Timestamp: 2024-12-19 17:15:00
-Purpose: Complete elimination of redirect loops
+Build ID: TRIGGER-017-API-ROUTING-FIX
+Timestamp: 2024-12-19 17:30:00
+Purpose: Fix API routing to return JSON instead of HTML
 
-MAJOR CHANGES:
-1. Removed ALL rewrites/routes from vercel.json
-2. Using Vercel's native routing: static files served from /public, API from /api/*
-3. Created proper index.html in /public with full frontend
-4. Simplified api/index.py to just export FastAPI app
-5. No more redirects, no more conflicts
+CRITICAL FIXES:
+1. Fixed FastAPI routes to remove /api/ prefix (Vercel adds it automatically)
+2. Removed conflicting frontend route from FastAPI app
+3. Clean separation: static files serve frontend, API functions serve JSON
+4. Fixed api/index.py to properly export FastAPI app
+5. Updated route paths: /health, /physics/query, /agents/status, /config
 
 ARCHITECTURE:
 - Static frontend: /public/index.html → served at /
-- API functions: /api/index.py → served at /api/*
-- Clean separation, no routing conflicts
+- API functions: /api/index.py → serves JSON at /api/*
+- No more HTML/JSON conflicts, proper Content-Type headers
+
+EXPECTED RESULT:
+- Frontend loads properly from static files
+- API calls return JSON (not HTML)
+- No more "Unexpected token 'T'" errors
+- Proper API status display
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.
