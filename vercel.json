@@ -1,32 +1,23 @@
 {
   "version": 2,
   "name": "pantheon",
-  "builds": [
+  "rewrites": [
     {
-      "src": "orchestration/main.py",
-      "use": "@vercel/python@4.1.0",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "python3.11"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/orchestration/main.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index"
     },
     {
-      "src": "/(.*)",
-      "dest": "/orchestration/main.py"
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ],
   "env": {
     "PYTHONPATH": "/var/task"
   },
   "functions": {
-    "orchestration/main.py": {
-      "runtime": "python3.11"
+    "api/index.py": {
+      "runtime": "python3.11",
+      "maxDuration": 30
     }
   },
   "regions": ["iad1"],
