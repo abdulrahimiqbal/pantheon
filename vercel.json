@@ -36,5 +36,6 @@
     "silent": false
   },
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "ignoreCommand": "node vercel-build-check.js"
 } 
