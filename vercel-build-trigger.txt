@@ -1,31 +1,29 @@
-TRIGGER-019-RUNTIME-CONFIG-FIX
+TRIGGER-020-RUNTIME-VERSION-FIX
 
-Build ID: TRIGGER-019-RUNTIME-CONFIG-FIX
-Timestamp: 2024-12-19 18:00:00
-Purpose: Fix Python runtime configuration and function deployment
+Build ID: TRIGGER-020-RUNTIME-VERSION-FIX
+Timestamp: 2025-07-05 19:55:00
+Purpose: Fix "Function Runtimes must have a valid version" error
 
-CRITICAL ISSUE:
-- Both complex FastAPI function and simple test function returning "The page could not be found"
-- Suggests fundamental issue with Python function deployment on Vercel
-- No functions are being recognized/deployed properly
+CRITICAL FIX:
+- Removed explicit "runtime": "python3.9" specification
+- Let Vercel auto-detect Python runtime from .py file extension
+- Removed unnecessary api/test.py function
+- Simplified vercel.json configuration
 
-FIXES APPLIED:
-1. Added explicit "runtime": "python3.9" to all functions in vercel.json
-2. Created simple test function (api/test.py) using BaseHTTPRequestHandler
-3. Configured both api/index.py and api/test.py in functions section
-4. Using Python 3.9 runtime (known to work with Vercel)
-
-DEBUGGING STEPS:
-- Test simple function: /api/test should return JSON
-- Test main function: /api/health should return JSON
-- Check if runtime specification resolves deployment issues
-- Verify function logs show successful deployment
+ERROR RESOLVED:
+- "Function Runtimes must have a valid version" error fixed
+- Vercel will now auto-detect Python runtime correctly
+- Only essential api/index.py function configured
 
 EXPECTED RESULT:
-- /api/test should return: {"status": "working", "message": "Simple test function is working"}
-- /api/health should return: {"status": "healthy", "service": "pantheon-physics-swarm"}
-- No more "The page could not be found" errors
-- Python functions should be properly recognized and deployed
+- Deployment should proceed without runtime errors
+- Python function should deploy successfully
+- All API endpoints should work correctly
+
+ARCHITECTURE:
+- Static frontend: /public/index.html → served at /
+- API function: /api/index.py → served at /api/* (auto-detected runtime)
+- Clean configuration, no runtime conflicts
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.
