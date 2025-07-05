@@ -66,10 +66,11 @@ async def root():
     """Root API endpoint."""
     return {
         "message": "Pantheon Physics Swarm API",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "docs": "/api/docs",
-        "build_test": "Root directory build test",
-        "timestamp": "2024-12-19"
+        "build_test": "Explicit build trigger test",
+        "timestamp": "2024-12-19",
+        "trigger_id": "TRIGGER-003"
     }
 
 # Frontend endpoint
