@@ -1,19 +1,14 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "pantheon",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.py"
-    }
-  ],
-  "env": {
-    "PYTHONPATH": "/var/task"
-  },
   "functions": {
     "api/index.py": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "PYTHONPATH": "/var/task"
   },
   "regions": ["iad1"],
   "github": {
@@ -21,7 +16,5 @@
     "autoAlias": true,
     "silent": false
   },
-  "cleanUrls": true,
-  "trailingSlash": false,
   "ignoreCommand": "node vercel-build-check.js"
 } 

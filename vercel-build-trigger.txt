@@ -1,10 +1,20 @@
-Vercel Build Trigger Test
-========================
+TRIGGER-016-COMPLETE-ROUTING-FIX
 
-Build ID: TRIGGER-015-REWRITES-FIX
-Timestamp: 2024-12-19 16:45:00
-Purpose: Fixed infinite redirect loop causing ERR_TOO_MANY_REDIRECTS
-Status: Changed from rewrites to routes, fixed destination path to api/index.py
+Build ID: TRIGGER-016-COMPLETE-ROUTING-FIX
+Timestamp: 2024-12-19 17:15:00
+Purpose: Complete elimination of redirect loops
+
+MAJOR CHANGES:
+1. Removed ALL rewrites/routes from vercel.json
+2. Using Vercel's native routing: static files served from /public, API from /api/*
+3. Created proper index.html in /public with full frontend
+4. Simplified api/index.py to just export FastAPI app
+5. No more redirects, no more conflicts
+
+ARCHITECTURE:
+- Static frontend: /public/index.html → served at /
+- API functions: /api/index.py → served at /api/*
+- Clean separation, no routing conflicts
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.
