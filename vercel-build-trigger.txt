@@ -1,29 +1,53 @@
-TRIGGER-020-RUNTIME-VERSION-FIX
+TRIGGER-021-CLEAN-CONFIG-FIX
 
-Build ID: TRIGGER-020-RUNTIME-VERSION-FIX
-Timestamp: 2025-07-05 19:55:00
-Purpose: Fix "Function Runtimes must have a valid version" error
+Build ID: TRIGGER-021-CLEAN-CONFIG-FIX
+Timestamp: 2025-07-05 20:00:00
+Purpose: Remove ALL runtime specifications causing deployment errors
 
 CRITICAL FIX:
-- Removed explicit "runtime": "python3.9" specification
-- Let Vercel auto-detect Python runtime from .py file extension
-- Removed unnecessary api/test.py function
-- Simplified vercel.json configuration
+- Removed api/test.py configuration from vercel.json (file was deleted but config remained)
+- This was causing "Function Runtimes must have a valid version" error
+- Now only api/index.py is configured (no runtime specified = auto-detect)
+- Completely clean configuration
 
-ERROR RESOLVED:
-- "Function Runtimes must have a valid version" error fixed
-- Vercel will now auto-detect Python runtime correctly
-- Only essential api/index.py function configured
+ERROR ROOT CAUSE:
+- api/test.py had "runtime": "python3.9" in vercel.json
+- File was deleted but configuration remained
+- Vercel tried to deploy non-existent function with invalid runtime spec
+- This caused the build failure
+
+SOLUTION:
+- Removed ALL references to api/test.py from vercel.json
+- Only api/index.py configured with maxDuration only
+- No runtime specifications anywhere
+- Clean, minimal configuration
 
 EXPECTED RESULT:
-- Deployment should proceed without runtime errors
-- Python function should deploy successfully
-- All API endpoints should work correctly
+- Build should proceed without runtime errors
+- Only api/index.py function will be deployed
+- Auto-detected Python runtime
+- All API endpoints should work
 
-ARCHITECTURE:
-- Static frontend: /public/index.html → served at /
-- API function: /api/index.py → served at /api/* (auto-detected runtime)
-- Clean configuration, no runtime conflicts
+FINAL VERCEL.JSON:
+{
+  "version": 2,
+  "name": "pantheon",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "PYTHONPATH": "/var/task"
+  },
+  "regions": ["iad1"],
+  "github": {
+    "enabled": true,
+    "autoAlias": true,
+    "silent": false
+  },
+  "ignoreCommand": "node vercel-build-check.js"
+}
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.
