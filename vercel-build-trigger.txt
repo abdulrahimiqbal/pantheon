@@ -1,7 +1,7 @@
 Vercel Build Trigger Test
 ========================
 
-Build ID: TRIGGER-014-REDIRECT-LOOP-FIX
+Build ID: TRIGGER-015-REWRITES-FIX
 Timestamp: 2024-12-19 16:45:00
 Purpose: Fixed infinite redirect loop causing ERR_TOO_MANY_REDIRECTS
 Status: Changed from rewrites to routes, fixed destination path to api/index.py
