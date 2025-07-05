@@ -31,6 +31,7 @@ class FirstPrinciplesTool(BaseTool):
     
     name: str = "first_principles_analysis"
     description: str = "Break down complex physics problems into fundamental principles and rebuild understanding"
+    fundamental_principles: Dict[str, Any] = {}
     
     def __init__(self):
         super().__init__()
@@ -60,9 +61,10 @@ class FirstPrinciplesTool(BaseTool):
                 "complementarity": "Quantum objects have both wave and particle properties"
             },
             "thermodynamic_principles": {
-                "first_law": "Energy is conserved (dU = Q - W)",
+                "first_law": "Energy is conserved in all processes",
                 "second_law": "Entropy of isolated system never decreases",
-                "third_law": "Entropy approaches zero as temperature approaches absolute zero"
+                "third_law": "Entropy approaches zero as temperature approaches absolute zero",
+                "zeroth_law": "Thermal equilibrium is transitive"
             }
         }
     
@@ -382,6 +384,7 @@ class InnovationTool(BaseTool):
     
     name: str = "innovation_generator"
     description: str = "Generate innovative approaches and potential breakthrough insights"
+    innovation_strategies: List[str] = []
     
     def __init__(self):
         super().__init__()
@@ -537,9 +540,7 @@ class TeslaPrinciplesAgent(BasePhysicsAgent):
     """
     
     def __init__(self, config: AgentConfig):
-        super().__init__(config)
-        
-        # Initialize specialized tools
+        # Initialize tools BEFORE calling super().__init__
         self.first_principles_tool = FirstPrinciplesTool()
         self.innovation_tool = InnovationTool()
         
@@ -548,6 +549,9 @@ class TeslaPrinciplesAgent(BasePhysicsAgent):
         self.confidence_calculator = ConfidenceCalculator()
         self.data_formatter = DataFormatter()
         
+        # Now call super().__init__ which will call _get_tools()
+        super().__init__(config)
+        
         # Agent-specific configuration
         self.agent_config = {
             "role": "Tesla Principles Innovator",
@@ -555,23 +559,13 @@ class TeslaPrinciplesAgent(BasePhysicsAgent):
             "backstory": """You are inspired by Nikola Tesla's revolutionary approach to physics. 
             You think from first principles, challenge conventional wisdom, and seek innovative 
             solutions. You have an intuitive understanding of fields, resonance, and energy 
-            flow. You excel at seeing patterns others miss and proposing breakthrough ideas 
+            that allows you to see patterns others miss. You are not afraid to propose ideas 
             that seem impossible until they work. You combine rigorous physics with creative 
             insight to push the boundaries of what's possible.""",
             "temperature": 0.8,  # High temperature for creativity
             "innovation_threshold": 0.6,
             "breakthrough_focus": True
         }
-        
-        # Create CrewAI agent
-        self.crew_agent = Agent(
-            role=self.agent_config["role"],
-            goal=self.agent_config["goal"],
-            backstory=self.agent_config["backstory"],
-            tools=[self.first_principles_tool, self.innovation_tool],
-            llm=self.llm,
-            verbose=True
-        )
         
         # Tesla-inspired quotes for inspiration
         self.tesla_quotes = [
@@ -972,3 +966,126 @@ class TeslaPrinciplesAgent(BasePhysicsAgent):
         response += "challenging assumptions, and seeking breakthrough innovations that push the boundaries of physics.*"
         
         return response 
+    
+    # Abstract method implementations required by BasePhysicsAgent
+    def _get_role_description(self) -> str:
+        """Get the role description for CrewAI."""
+        return "Tesla Principles Innovator"
+    
+    def _get_goal_description(self) -> str:
+        """Get the goal description for CrewAI."""
+        return "Apply first-principles thinking and generate breakthrough insights"
+    
+    def _get_backstory(self) -> str:
+        """Get the backstory for CrewAI."""
+        return """You are inspired by Nikola Tesla's revolutionary approach to physics. 
+        You think from first principles, challenge conventional wisdom, and seek innovative 
+        solutions. You have an intuitive understanding of fields, resonance, and energy 
+        that allows you to see patterns others miss. You are not afraid to propose ideas 
+        that seem impossible until they work. You combine rigorous physics with creative 
+        insight to push the boundaries of what's possible."""
+    
+    def _get_tools(self) -> List:
+        """Get the tools available to this agent."""
+        return [self.first_principles_tool, self.innovation_tool]
+    
+    def _create_task_description(self, query: PhysicsQuery) -> str:
+        """Create a task description for CrewAI based on the query."""
+        return f"""Apply Tesla's first-principles thinking to: {query.question}
+        
+        Requirements:
+        - Break down the problem to fundamental principles
+        - Challenge conventional assumptions
+        - Generate innovative and breakthrough insights
+        - Propose novel experimental approaches
+        - Think in terms of energy, frequency, and vibration
+        - Seek patterns and connections others miss
+        
+        Deliver revolutionary insights that push physics boundaries."""
+    
+    def _get_expected_output_format(self) -> str:
+        """Get the expected output format for CrewAI."""
+        return """Tesla-inspired analysis containing:
+        - First-principles breakdown of the problem
+        - Challenge to conventional wisdom
+        - Breakthrough innovation ideas
+        - Novel experimental proposals
+        - Energy and field-based insights
+        - Revolutionary perspectives on the physics"""
+    
+    async def _process_result(self, query: PhysicsQuery, result: Any) -> AgentResponse:
+        """Process the result from CrewAI and create an AgentResponse."""
+        try:
+            # Apply first-principles analysis
+            first_principles = await self.apply_first_principles(query)
+            
+            # Generate innovations
+            innovations = await self.generate_innovations(query)
+            
+            # Challenge assumptions
+            challenges = await self.challenge_assumptions(query, "")
+            
+            # Propose breakthrough experiment
+            experiment = await self.propose_breakthrough_experiment(query, innovations)
+            
+            # Calculate confidence
+            confidence = self._calculate_tesla_confidence(first_principles, innovations)
+            
+            # Format response
+            content = self._format_tesla_response(query, first_principles, innovations, challenges, experiment)
+            
+            return AgentResponse(
+                agent_name="tesla_principles",
+                content=content,
+                confidence=confidence,
+                sources=[],
+                reasoning="First-principles analysis with Tesla-inspired breakthrough thinking",
+                questions_raised=self._generate_tesla_questions(query, first_principles),
+                metadata={
+                    "first_principles_analysis": first_principles,
+                    "innovations": innovations,
+                    "challenges": challenges,
+                    "breakthrough_experiment": experiment,
+                    "tesla_quote": random.choice(self.tesla_quotes)
+                },
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+            
+        except Exception as e:
+            return AgentResponse(
+                agent_name="tesla_principles",
+                content=f"Error in Tesla principles analysis: {str(e)}",
+                confidence=ConfidenceLevel.LOW,
+                sources=[],
+                reasoning=f"Tesla agent error: {str(e)}",
+                questions_raised=[],
+                metadata={"error": str(e)},
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+    
+    def _generate_tesla_questions(self, query: PhysicsQuery, analysis: Dict[str, Any]) -> List[str]:
+        """Generate Tesla-inspired questions to deepen understanding"""
+        questions = []
+        
+        # Tesla-style questions
+        tesla_questions = [
+            "What if we could harness the energy of this phenomenon?",
+            "How might this process be amplified through resonance?",
+            "What field interactions are we not seeing?",
+            "Could this be transmitted wirelessly?",
+            "What symmetries exist in this system?",
+            "How does this relate to the fundamental forces?",
+            "What would Tesla do with this problem?",
+            "Could this phenomenon be scaled up dramatically?"
+        ]
+        
+        questions.extend(tesla_questions[:5])
+        
+        # Add specific questions based on analysis
+        breakthrough_potential = analysis.get("breakthrough_potential", {})
+        if breakthrough_potential.get("score", 0) > 0.5:
+            questions.append("What paradigm shift could this enable?")
+        
+        return questions[:6]  # Limit to 6 questions 

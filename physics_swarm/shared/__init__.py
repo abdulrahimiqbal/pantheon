@@ -49,6 +49,9 @@ from .utils import (
     DataFormatter,
     HashGenerator,
     JSONEncoder,
+    InnovationAnalyzer,
+    QuestionGenerator,
+    AnalysisDeepener,
     
     # Convenience functions
     setup_logger,
@@ -97,6 +100,9 @@ __all__ = [
     "DataFormatter",
     "HashGenerator",
     "JSONEncoder",
+    "InnovationAnalyzer",
+    "QuestionGenerator",
+    "AnalysisDeepener",
     "setup_logger",
     "validate_source",
     "calculate_confidence"

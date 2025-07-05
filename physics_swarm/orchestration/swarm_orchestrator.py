@@ -81,42 +81,46 @@ class SwarmOrchestrator:
         base_config = self.config.agent_config
         
         # Web Crawler Agent config
-        self.agent_configs["web_crawler"] = AgentConfig(
-            **base_config.dict(),
-            agent_name="web_crawler",
-            role=AgentRole.RESEARCHER,
-            temperature=0.3,  # Low for factual accuracy
-            max_tokens=2000,
-            tavily_api_key=self.config.tavily_api_key,
-            brightdata_api_key=self.config.brightdata_api_key
-        )
+        base_dict = base_config.dict()
+        base_dict.update({
+            "agent_name": "web_crawler",
+            "agent_role": AgentRole.WEB_CRAWLER,
+            "temperature": 0.3,  # Low for factual accuracy
+            "max_tokens": 2000,
+            "tavily_api_key": self.config.tavily_api_key,
+            "brightdata_api_key": self.config.brightdata_api_key
+        })
+        self.agent_configs["web_crawler"] = AgentConfig(**base_dict)
         
         # Physicist Master Agent config
-        self.agent_configs["physicist_master"] = AgentConfig(
-            **base_config.dict(),
-            agent_name="physicist_master",
-            role=AgentRole.ORCHESTRATOR,
-            temperature=0.5,  # Balanced for analysis
-            max_tokens=3000
-        )
+        base_dict = base_config.dict()
+        base_dict.update({
+            "agent_name": "physicist_master",
+            "agent_role": AgentRole.PHYSICIST_MASTER,
+            "temperature": 0.5,  # Balanced for analysis
+            "max_tokens": 3000
+        })
+        self.agent_configs["physicist_master"] = AgentConfig(**base_dict)
         
         # Tesla Principles Agent config
-        self.agent_configs["tesla_principles"] = AgentConfig(
-            **base_config.dict(),
-            agent_name="tesla_principles",
-            role=AgentRole.INNOVATOR,
-            temperature=0.8,  # High for creativity
-            max_tokens=2500
-        )
+        base_dict = base_config.dict()
+        base_dict.update({
+            "agent_name": "tesla_principles",
+            "agent_role": AgentRole.TESLA_PRINCIPLES,
+            "temperature": 0.8,  # High for creativity
+            "max_tokens": 2500
+        })
+        self.agent_configs["tesla_principles"] = AgentConfig(**base_dict)
         
         # Curious Questioner Agent config
-        self.agent_configs["curious_questioner"] = AgentConfig(
-            **base_config.dict(),
-            agent_name="curious_questioner",
-            role=AgentRole.ANALYST,
-            temperature=0.7,  # Balanced for questioning
-            max_tokens=2000
-        )
+        base_dict = base_config.dict()
+        base_dict.update({
+            "agent_name": "curious_questioner",
+            "agent_role": AgentRole.CURIOUS_QUESTIONER,
+            "temperature": 0.7,  # Balanced for questioning
+            "max_tokens": 2000
+        })
+        self.agent_configs["curious_questioner"] = AgentConfig(**base_dict)
     
     def _initialize_agents(self):
         """Initialize all specialist agents"""
@@ -136,15 +140,14 @@ class SwarmOrchestrator:
         # Extract CrewAI agents from our agent instances
         crew_agents = [agent.crew_agent for agent in self.agents.values()]
         
-        # Create the crew with hierarchical process
+        # Create the crew with sequential process (no manager LLM required)
         self.crew = Crew(
             agents=crew_agents,
-            process=Process.hierarchical,
-            manager_llm=self.agents["physicist_master"].llm,
+            process=Process.sequential,
             verbose=True
         )
         
-        self.logger.info("CrewAI crew created with hierarchical process")
+        self.logger.info("CrewAI crew created with sequential process")
     
     async def process_physics_query(self, query: PhysicsQuery) -> SwarmResponse:
         """

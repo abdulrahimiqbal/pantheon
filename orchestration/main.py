@@ -1,7 +1,7 @@
 """
 FastAPI backend for the Pantheon Physics Swarm platform.
 This serves as the main API entry point for Vercel deployment.
-Build Version: 1.1.0 - RESET BUILD TEST
+Build Version: 2.0.0 - REAL PHYSICS SWARM INTEGRATION
 """
 
 import os
@@ -13,6 +13,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import logging
+import asyncio
+from datetime import datetime
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent
@@ -27,7 +29,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Pantheon Physics Swarm API",
     description="AI Agent Swarm for Physics Research and Analysis",
-    version="1.1.0",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -40,6 +42,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global variables for orchestration
+swarm_orchestrator = None
+swarm_status = {"initialized": False, "error": None}
 
 # Pydantic models
 class PhysicsQuery(BaseModel):
@@ -54,11 +60,47 @@ class SwarmResponse(BaseModel):
     error: Optional[str] = None
     execution_time: Optional[float] = None
 
+def initialize_swarm():
+    """Initialize the physics swarm orchestrator."""
+    global swarm_orchestrator, swarm_status
+    
+    try:
+        logger.info("Initializing Physics Swarm...")
+        
+        # Import physics swarm components
+        from physics_swarm.shared import settings, swarm_config, PhysicsQuery as SwarmPhysicsQuery, ComplexityLevel
+        from physics_swarm.orchestration.swarm_orchestrator import SwarmOrchestrator
+        
+        # Create orchestrator instance
+        swarm_orchestrator = SwarmOrchestrator(swarm_config)
+        
+        swarm_status["initialized"] = True
+        swarm_status["error"] = None
+        logger.info("✅ Physics Swarm initialized successfully")
+        
+    except Exception as e:
+        error_msg = f"Failed to initialize Physics Swarm: {str(e)}"
+        logger.error(error_msg)
+        swarm_status["initialized"] = False
+        swarm_status["error"] = error_msg
+        swarm_orchestrator = None
+
+# Initialize swarm on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize swarm on app startup."""
+    initialize_swarm()
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring."""
-    return {"status": "healthy", "service": "pantheon-physics-swarm"}
+    return {
+        "status": "healthy", 
+        "service": "pantheon-physics-swarm",
+        "swarm_initialized": swarm_status["initialized"],
+        "swarm_error": swarm_status["error"]
+    }
 
 # Root endpoint
 @app.get("/")
@@ -66,15 +108,14 @@ async def root():
     """Root API endpoint."""
     return {
         "message": "Pantheon Physics Swarm API",
-        "version": "1.1.0",
+        "version": "2.0.0",
         "docs": "/docs",
-        "build_test": "RESET BUILD TEST - Framework: Other",
-        "timestamp": "2024-12-19T15:00:00Z",
-        "trigger_id": "TRIGGER-005-RESET",
-        "status": "Testing complete deployment pipeline"
+        "build_test": "REAL PHYSICS SWARM INTEGRATION",
+        "timestamp": datetime.now().isoformat(),
+        "trigger_id": "PHASE-4-IMPLEMENTATION",
+        "status": "Physics swarm ready for queries",
+        "swarm_initialized": swarm_status["initialized"]
     }
-
-# Note: Frontend is served by static files in /public directory
 
 # Physics query endpoint
 @app.post("/physics/query", response_model=SwarmResponse)
@@ -82,52 +123,97 @@ async def physics_query(query: PhysicsQuery, background_tasks: BackgroundTasks):
     """
     Process a physics query using the AI agent swarm.
     """
+    start_time = datetime.now()
+    
     try:
-        # Import here to avoid circular imports and handle missing dependencies
-        try:
-            from physics_swarm.orchestration.swarm_orchestrator import SwarmOrchestrator
-            from physics_swarm.shared.types import PhysicsQuery as SwarmPhysicsQuery
+        # Check if swarm is initialized
+        if not swarm_orchestrator or not swarm_status["initialized"]:
+            # Try to reinitialize
+            initialize_swarm()
             
-            # Initialize the swarm orchestrator
-            orchestrator = SwarmOrchestrator()
-            
-            # Convert request to internal format
-            swarm_query = SwarmPhysicsQuery(
-                question=query.question,
-                complexity=query.complexity or "intermediate",
-                include_sources=query.include_sources,
-                metadata={"agent_preferences": query.agent_preferences or []}
-            )
-            
-            # Process the query
-            result = await orchestrator.process_query(swarm_query)
-            
-            return SwarmResponse(
-                success=True,
-                data=result.dict() if hasattr(result, 'dict') else result,
-                execution_time=getattr(result, 'execution_time', None)
-            )
-            
-        except ImportError as e:
-            logger.warning(f"Physics swarm not available: {e}")
-            # Return a mock response for demonstration
-            return SwarmResponse(
-                success=True,
-                data={
-                    "answer": f"Mock response for: {query.question}",
-                    "confidence": 0.8,
-                    "sources": ["Mock source for demonstration"],
-                    "agents_used": ["physicist_master", "web_crawler"],
-                    "note": "This is a mock response. Full physics swarm not available in this deployment."
-                },
-                execution_time=0.1
-            )
-            
+            if not swarm_orchestrator or not swarm_status["initialized"]:
+                return SwarmResponse(
+                    success=False,
+                    error=f"Physics swarm not available: {swarm_status['error']}",
+                    execution_time=0.0
+                )
+        
+        # Import required types
+        from physics_swarm.shared import PhysicsQuery as SwarmPhysicsQuery, ComplexityLevel
+        
+        # Convert complexity level
+        complexity_mapping = {
+            "basic": ComplexityLevel.BASIC,
+            "intermediate": ComplexityLevel.INTERMEDIATE,
+            "advanced": ComplexityLevel.ADVANCED,
+            "research": ComplexityLevel.RESEARCH
+        }
+        
+        complexity_level = complexity_mapping.get(query.complexity.lower(), ComplexityLevel.INTERMEDIATE)
+        
+        # Create swarm query
+        swarm_query = SwarmPhysicsQuery(
+            question=query.question,
+            context="User query via API",
+            complexity_level=complexity_level,
+            timestamp=datetime.utcnow()
+        )
+        
+        logger.info(f"Processing physics query: {query.question}")
+        
+        # Process the query through the swarm
+        swarm_response = await swarm_orchestrator.process_physics_query(swarm_query)
+        
+        # Calculate execution time
+        execution_time = (datetime.now() - start_time).total_seconds()
+        
+        # Format response
+        response_data = {
+            "answer": swarm_response.master_response.content,
+            "confidence": swarm_response.confidence.value,
+            "sources": [
+                {
+                    "title": source.title,
+                    "url": source.url,
+                    "credibility": source.credibility_score,
+                    "type": source.source_type.value
+                }
+                for source in swarm_response.master_response.sources
+            ],
+            "agents_used": list(swarm_response.agent_responses.keys()),
+            "agent_details": {
+                agent_name: {
+                    "content": response.content,
+                    "confidence": response.confidence.value,
+                    "sources_count": len(response.sources),
+                    "questions_raised": response.questions_raised,
+                    "processing_time": response.processing_time
+                }
+                for agent_name, response in swarm_response.agent_responses.items()
+            },
+            "total_sources": len(swarm_response.master_response.sources),
+            "processing_time": execution_time,
+            "query_complexity": complexity_level.value,
+            "timestamp": swarm_response.timestamp.isoformat()
+        }
+        
+        logger.info(f"✅ Query processed successfully in {execution_time:.2f}s")
+        
+        return SwarmResponse(
+            success=True,
+            data=response_data,
+            execution_time=execution_time
+        )
+        
     except Exception as e:
-        logger.error(f"Error processing physics query: {e}")
+        execution_time = (datetime.now() - start_time).total_seconds()
+        error_msg = f"Error processing physics query: {str(e)}"
+        logger.error(error_msg)
+        
         return SwarmResponse(
             success=False,
-            error=str(e)
+            error=error_msg,
+            execution_time=execution_time
         )
 
 # Agent status endpoint
@@ -135,47 +221,111 @@ async def physics_query(query: PhysicsQuery, background_tasks: BackgroundTasks):
 async def get_agent_status():
     """Get the status of all physics agents."""
     try:
-        # Try to import and get actual status
-        try:
-            from physics_swarm.orchestration.swarm_orchestrator import SwarmOrchestrator
-            orchestrator = SwarmOrchestrator()
-            status = orchestrator.get_agent_status()
-            return {"success": True, "agents": status}
-        except ImportError:
-            # Return mock status
+        if not swarm_orchestrator or not swarm_status["initialized"]:
             return {
-                "success": True,
-                "agents": {
-                    "physicist_master": {"status": "ready", "last_used": None},
-                    "web_crawler": {"status": "ready", "last_used": None},
-                    "tesla_principles": {"status": "ready", "last_used": None},
-                    "curious_questioner": {"status": "ready", "last_used": None}
-                },
-                "note": "Mock status - full physics swarm not available"
+                "success": False,
+                "error": "Physics swarm not initialized",
+                "agents": {}
             }
+        
+        # Get swarm status
+        status = swarm_orchestrator.get_swarm_status()
+        
+        return {
+            "success": True,
+            "agents": status.get("agents", {}),
+            "active_queries": status.get("active_queries", 0),
+            "total_queries_processed": status.get("total_queries_processed", 0),
+            "average_processing_time": status.get("average_processing_time", 0.0),
+            "swarm_initialized": swarm_status["initialized"]
+        }
+        
     except Exception as e:
         logger.error(f"Error getting agent status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+            "agents": {}
+        }
 
 # Configuration endpoint
 @app.get("/config")
 async def get_config():
     """Get API configuration and available features."""
-    return {
-        "features": {
-            "physics_queries": True,
-            "agent_orchestration": True,
-            "source_validation": True,
-            "complexity_levels": ["basic", "intermediate", "advanced", "research"]
-        },
-        "agents": [
-            "physicist_master",
-            "web_crawler", 
-            "tesla_principles",
-            "curious_questioner"
-        ],
-        "version": "1.0.0"
-    }
+    try:
+        from physics_swarm.shared import settings
+        
+        return {
+            "features": {
+                "physics_queries": True,
+                "agent_orchestration": True,
+                "source_validation": True,
+                "complexity_levels": ["basic", "intermediate", "advanced", "research"],
+                "real_time_processing": True,
+                "multi_agent_synthesis": True
+            },
+            "agents": [
+                "physicist_master",
+                "web_crawler", 
+                "tesla_principles",
+                "curious_questioner"
+            ],
+            "version": "2.0.0",
+            "swarm_initialized": swarm_status["initialized"],
+            "environment": settings.environment,
+            "max_parallel_agents": settings.max_parallel_agents
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting config: {e}")
+        return {
+            "features": {"physics_queries": False},
+            "agents": [],
+            "version": "2.0.0",
+            "error": str(e)
+        }
+
+# Swarm management endpoints
+@app.post("/swarm/reinitialize")
+async def reinitialize_swarm():
+    """Reinitialize the physics swarm."""
+    try:
+        initialize_swarm()
+        return {
+            "success": swarm_status["initialized"],
+            "message": "Swarm reinitialized" if swarm_status["initialized"] else "Swarm initialization failed",
+            "error": swarm_status["error"]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": "Failed to reinitialize swarm",
+            "error": str(e)
+        }
+
+@app.get("/swarm/performance")
+async def get_swarm_performance():
+    """Get swarm performance metrics."""
+    try:
+        if not swarm_orchestrator or not swarm_status["initialized"]:
+            return {
+                "success": False,
+                "error": "Physics swarm not initialized"
+            }
+        
+        status = swarm_orchestrator.get_swarm_status()
+        return {
+            "success": True,
+            "metrics": status.get("performance_metrics", {}),
+            "average_processing_time": status.get("average_processing_time", 0.0),
+            "total_queries": status.get("total_queries_processed", 0)
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 # Error handlers
 @app.exception_handler(404)

@@ -14,7 +14,7 @@ from datetime import datetime
 from crewai import Agent, Task, Crew
 from crewai.tools import BaseTool
 
-from shared import (
+from ..shared import (
     AgentRole, AgentConfig, PhysicsQuery, AgentResponse, DataSource,
     ConfidenceLevel, ComplexityLevel, Timer, setup_logger, calculate_confidence
 )
@@ -87,14 +87,11 @@ class BasePhysicsAgent(ABC):
         """Get the tools available to this agent."""
         pass
     
-    def _get_llm_config(self) -> Dict[str, Any]:
+    def _get_llm_config(self):
         """Get LLM configuration for this agent."""
-        return {
-            "model": self.config.model_name,
-            "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens,
-            "timeout": self.config.timeout
-        }
+        # For now, return None to use default LLM
+        # In production, configure with actual LLM instance
+        return None
     
     async def process_query(self, query: PhysicsQuery) -> AgentResponse:
         """
@@ -141,7 +138,7 @@ class BasePhysicsAgent(ABC):
             return AgentResponse(
                 agent_name=self.role,
                 content=f"Error processing query: {str(e)}",
-                confidence=0.0,
+                confidence=ConfidenceLevel.LOW,
                 sources=[],
                 reasoning=f"Agent encountered an error: {str(e)}",
                 questions_raised=[],

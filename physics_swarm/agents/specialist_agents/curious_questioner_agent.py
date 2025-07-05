@@ -31,6 +31,7 @@ class SocraticQuestioningTool(BaseTool):
     
     name: str = "socratic_questioning"
     description: str = "Generate probing questions using Socratic method to reveal deeper understanding"
+    question_categories: Dict[str, List[str]] = {}
     
     def __init__(self):
         super().__init__()
@@ -186,6 +187,7 @@ class CriticalAnalysisTool(BaseTool):
     
     name: str = "critical_analysis"
     description: str = "Perform critical analysis to identify gaps, inconsistencies, and areas for deeper investigation"
+    analysis_frameworks: Dict[str, Any] = {}
     
     def __init__(self):
         super().__init__()
@@ -441,6 +443,7 @@ class QuestionPrioritizationTool(BaseTool):
     
     name: str = "question_prioritization"
     description: str = "Prioritize questions based on their importance, impact, and potential for insight"
+    prioritization_criteria: Dict[str, float] = {}
     
     def __init__(self):
         super().__init__()
@@ -569,9 +572,7 @@ class CuriousQuestionerAgent(BasePhysicsAgent):
     """
     
     def __init__(self, config: AgentConfig):
-        super().__init__(config)
-        
-        # Initialize specialized tools
+        # Initialize tools BEFORE calling super().__init__
         self.socratic_tool = SocraticQuestioningTool()
         self.critical_analysis_tool = CriticalAnalysisTool()
         self.prioritization_tool = QuestionPrioritizationTool()
@@ -580,6 +581,9 @@ class CuriousQuestionerAgent(BasePhysicsAgent):
         self.text_processor = TextProcessor()
         self.confidence_calculator = ConfidenceCalculator()
         self.data_formatter = DataFormatter()
+        
+        # Now call super().__init__ which will call _get_tools()
+        super().__init__(config)
         
         # Agent-specific configuration
         self.agent_config = {
@@ -595,16 +599,6 @@ class CuriousQuestionerAgent(BasePhysicsAgent):
             "max_questions_per_category": 5,
             "depth_focus": True
         }
-        
-        # Create CrewAI agent
-        self.crew_agent = Agent(
-            role=self.agent_config["role"],
-            goal=self.agent_config["goal"],
-            backstory=self.agent_config["backstory"],
-            tools=[self.socratic_tool, self.critical_analysis_tool, self.prioritization_tool],
-            llm=self.llm,
-            verbose=True
-        )
         
         # Famous questioning quotes for inspiration
         self.questioning_quotes = [
@@ -1187,4 +1181,123 @@ class CuriousQuestionerAgent(BasePhysicsAgent):
         response += "*This analysis uses Socratic questioning and critical thinking to guide deeper "
         response += "exploration and understanding of physics concepts.*"
         
-        return response 
+        return response
+    
+    # Abstract method implementations required by BasePhysicsAgent
+    def _get_role_description(self) -> str:
+        """Get the role description for CrewAI."""
+        return "Curious Physics Questioner"
+    
+    def _get_goal_description(self) -> str:
+        """Get the goal description for CrewAI."""
+        return "Generate insightful questions and deepen understanding through critical inquiry"
+    
+    def _get_backstory(self) -> str:
+        """Get the backstory for CrewAI."""
+        return """You are an insatiably curious physicist with a gift for asking 
+        the right questions at the right time. You have studied under great mentors who 
+        taught you that the quality of questions determines the quality of understanding. 
+        You excel at identifying assumptions, finding gaps in reasoning, and guiding 
+        others toward deeper insights. You believe that every answer should lead to 
+        better questions, and that true understanding comes from questioning everything."""
+    
+    def _get_tools(self) -> List:
+        """Get the tools available to this agent."""
+        return [self.socratic_tool, self.critical_analysis_tool, self.prioritization_tool]
+    
+    def _create_task_description(self, query: PhysicsQuery) -> str:
+        """Create a task description for CrewAI based on the query."""
+        return f"""Generate insightful questions and critical analysis for: {query.question}
+        
+        Requirements:
+        - Apply Socratic questioning method
+        - Identify gaps in understanding and reasoning
+        - Generate probing questions that deepen insight
+        - Prioritize questions by importance and impact
+        - Guide deeper inquiry and investigation
+        - Challenge assumptions and conventional thinking
+        
+        Deliver comprehensive questioning framework to enhance understanding."""
+    
+    def _get_expected_output_format(self) -> str:
+        """Get the expected output format for CrewAI."""
+        return """Curious inquiry analysis containing:
+        - Prioritized list of probing questions
+        - Socratic questioning framework by category
+        - Critical analysis of gaps and inconsistencies
+        - Investigation strategy and guidance
+        - Deeper inquiry opportunities
+        - Breakthrough potential assessment"""
+    
+    async def _process_result(self, query: PhysicsQuery, result: Any) -> AgentResponse:
+        """Process the result from CrewAI and create an AgentResponse."""
+        try:
+            # Generate Socratic questions
+            socratic_analysis = await self.generate_socratic_questions(query)
+            
+            # Perform critical analysis
+            critical_analysis = await self.perform_critical_analysis(query.question)
+            
+            # Collect all generated questions
+            all_questions = []
+            
+            # Add questions from Socratic analysis
+            for category, questions in socratic_analysis["generated_questions"].items():
+                all_questions.extend(questions)
+            
+            # Add critical questions
+            all_questions.extend(critical_analysis["critical_questions"])
+            
+            # Add physics-specific questions
+            all_questions.extend(socratic_analysis["physics_specific"])
+            
+            # Prioritize questions
+            prioritization = await self.prioritize_questions(all_questions, query.question)
+            
+            # Guide deeper inquiry
+            deeper_inquiry = await self.guide_deeper_inquiry(query.question, "")
+            
+            # Calculate confidence
+            confidence = self._calculate_questioner_confidence(socratic_analysis, critical_analysis)
+            
+            # Format response
+            content = self._format_questioner_response(
+                query, socratic_analysis, critical_analysis, prioritization, deeper_inquiry
+            )
+            
+            return AgentResponse(
+                agent_name="curious_questioner",
+                content=content,
+                confidence=confidence,
+                sources=[],
+                reasoning="Generated insightful questions using Socratic method and critical analysis",
+                questions_raised=self._extract_top_questions(prioritization),
+                metadata={
+                    "socratic_analysis": socratic_analysis,
+                    "critical_analysis": critical_analysis,
+                    "prioritization": prioritization,
+                    "deeper_inquiry": deeper_inquiry,
+                    "total_questions_generated": len(all_questions),
+                    "questioning_quote": random.choice(self.questioning_quotes)
+                },
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+            
+        except Exception as e:
+            return AgentResponse(
+                agent_name="curious_questioner",
+                content=f"Error in curious questioner analysis: {str(e)}",
+                confidence=ConfidenceLevel.LOW,
+                sources=[],
+                reasoning=f"Questioner agent error: {str(e)}",
+                questions_raised=[],
+                metadata={"error": str(e)},
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+    
+    def _extract_top_questions(self, prioritization: Dict[str, Any]) -> List[str]:
+        """Extract the top priority questions from prioritization analysis"""
+        prioritized = prioritization.get("prioritized_questions", [])
+        return [q_data["question"] for q_data in prioritized[:5]] 

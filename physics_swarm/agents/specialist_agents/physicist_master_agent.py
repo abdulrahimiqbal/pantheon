@@ -30,6 +30,7 @@ class PhysicsKnowledgeBase(BaseTool):
     
     name: str = "physics_knowledge"
     description: str = "Access comprehensive physics knowledge base for analysis and validation"
+    knowledge_domains: Dict[str, Any] = {}
     
     def __init__(self):
         super().__init__()
@@ -60,14 +61,14 @@ class PhysicsKnowledgeBase(BaseTool):
                 "applications": ["GPS", "particle accelerators", "cosmology"]
             },
             "particle_physics": {
-                "concepts": ["Standard Model", "quarks", "leptons", "gauge bosons", "Higgs mechanism"],
+                "concepts": ["quarks", "leptons", "bosons", "standard model", "symmetries"],
                 "equations": ["Dirac equation", "Yang-Mills theory", "QCD Lagrangian"],
-                "applications": ["particle accelerators", "cosmology", "nuclear physics"]
+                "applications": ["particle accelerators", "detector physics", "cosmology"]
             },
             "astrophysics": {
-                "concepts": ["stellar evolution", "black holes", "dark matter", "cosmic microwave background"],
-                "equations": ["Schwarzschild metric", "Friedmann equations", "stellar structure"],
-                "applications": ["cosmology", "exoplanet detection", "gravitational waves"]
+                "concepts": ["stellar evolution", "galaxies", "dark matter", "dark energy", "cosmology"],
+                "equations": ["Friedmann equations", "Schwarzschild metric", "Chandrasekhar limit"],
+                "applications": ["space missions", "observational astronomy", "cosmological models"]
             }
         }
     
@@ -102,11 +103,15 @@ class PhysicsAnalysisTool(BaseTool):
     
     name: str = "physics_analysis"
     description: str = "Perform deep physics analysis, concept mapping, and theoretical validation"
+    analyzer: Optional[Any] = None
+    concept_mapper: Optional[Any] = None
     
     def __init__(self):
         super().__init__()
-        self.analyzer = PhysicsAnalyzer()
-        self.concept_mapper = ConceptMapper()
+        # For now, these are placeholder objects
+        # In a real implementation, these would be sophisticated NLP/ML models
+        self.analyzer = "PhysicsAnalyzer"  # Placeholder
+        self.concept_mapper = "ConceptMapper"  # Placeholder
     
     def _run(self, query: str, sources: List[Dict] = None, analysis_type: str = "comprehensive") -> Dict[str, Any]:
         """Perform physics analysis"""
@@ -226,9 +231,7 @@ class PhysicistMasterAgent(BasePhysicsAgent):
     """
     
     def __init__(self, config: AgentConfig):
-        super().__init__(config)
-        
-        # Initialize specialized tools
+        # Initialize tools BEFORE calling super().__init__
         self.knowledge_base = PhysicsKnowledgeBase()
         self.analysis_tool = PhysicsAnalysisTool()
         
@@ -236,6 +239,9 @@ class PhysicistMasterAgent(BasePhysicsAgent):
         self.text_processor = TextProcessor()
         self.confidence_calculator = ConfidenceCalculator()
         self.data_formatter = DataFormatter()
+        
+        # Now call super().__init__ which will call _get_tools()
+        super().__init__(config)
         
         # Agent-specific configuration
         self.agent_config = {
@@ -250,16 +256,6 @@ class PhysicistMasterAgent(BasePhysicsAgent):
             "max_iterations": 5,
             "validation_threshold": 0.8
         }
-        
-        # Create CrewAI agent
-        self.crew_agent = Agent(
-            role=self.agent_config["role"],
-            goal=self.agent_config["goal"],
-            backstory=self.agent_config["backstory"],
-            tools=[self.knowledge_base, self.analysis_tool],
-            llm=self.llm,
-            verbose=True
-        )
         
         # Track agent coordination
         self.agent_responses = {}
@@ -806,4 +802,110 @@ class PhysicistMasterAgent(BasePhysicsAgent):
         elif len(domains) <= 2:
             return ConfidenceLevel.MEDIUM
         else:
-            return ConfidenceLevel.LOW 
+            return ConfidenceLevel.LOW
+    
+    # Abstract method implementations required by BasePhysicsAgent
+    def _get_role_description(self) -> str:
+        """Get the role description for CrewAI."""
+        return "Physics Master Orchestrator"
+    
+    def _get_goal_description(self) -> str:
+        """Get the goal description for CrewAI."""
+        return "Coordinate physics research and provide expert analysis"
+    
+    def _get_backstory(self) -> str:
+        """Get the backstory for CrewAI."""
+        return """You are a distinguished physics professor with decades of 
+        experience in theoretical and experimental physics. You have published 
+        extensively in quantum mechanics, relativity, and particle physics. 
+        You excel at coordinating research teams, validating scientific claims, 
+        and synthesizing complex physics concepts for different audiences."""
+    
+    def _get_tools(self) -> List:
+        """Get the tools available to this agent."""
+        return [self.knowledge_base, self.analysis_tool]
+    
+    def _create_task_description(self, query: PhysicsQuery) -> str:
+        """Create a task description for CrewAI based on the query."""
+        return f"""Provide expert physics analysis for: {query.question}
+        
+        Requirements:
+        - Apply deep physics knowledge and expertise
+        - Identify key physics domains and concepts
+        - Assess theoretical frameworks and complexity
+        - Provide authoritative analysis appropriate for {query.complexity_level.value} level
+        
+        Deliver comprehensive physics expert analysis."""
+    
+    def _get_expected_output_format(self) -> str:
+        """Get the expected output format for CrewAI."""
+        return """Expert physics analysis containing:
+        - Domain identification and classification
+        - Complexity assessment
+        - Theoretical framework analysis
+        - Key concepts and principles
+        - Expert recommendations and insights"""
+    
+    async def _process_result(self, query: PhysicsQuery, result: Any) -> AgentResponse:
+        """Process the result from CrewAI and create an AgentResponse."""
+        try:
+            # Perform initial analysis
+            analysis = await self._perform_initial_analysis(query)
+            
+            # Create master analysis
+            content = self._create_master_analysis(query, analysis)
+            
+            # Calculate confidence
+            confidence = self._calculate_master_confidence(analysis)
+            
+            return AgentResponse(
+                agent_name="physicist_master",
+                content=content,
+                confidence=confidence,
+                sources=[],
+                reasoning="Expert physics analysis based on comprehensive knowledge base",
+                questions_raised=self._generate_expert_questions(query, analysis),
+                metadata={
+                    "analysis": analysis,
+                    "domains": analysis.get("domains", []),
+                    "complexity": analysis.get("complexity_assessment", {}),
+                    "theoretical_framework": analysis.get("theoretical_framework", "general")
+                },
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+            
+        except Exception as e:
+            return AgentResponse(
+                agent_name="physicist_master",
+                content=f"Error in physics master analysis: {str(e)}",
+                confidence=ConfidenceLevel.LOW,
+                sources=[],
+                reasoning=f"Master agent error: {str(e)}",
+                questions_raised=[],
+                metadata={"error": str(e)},
+                processing_time=0.0,
+                timestamp=datetime.utcnow()
+            )
+    
+    def _generate_expert_questions(self, query: PhysicsQuery, analysis: Dict[str, Any]) -> List[str]:
+        """Generate expert-level questions to deepen understanding"""
+        questions = []
+        
+        domains = analysis.get("domains", [])
+        complexity = analysis.get("complexity_assessment", {})
+        
+        # Domain-specific questions
+        if "quantum_mechanics" in domains:
+            questions.append("What are the quantum mechanical implications of this phenomenon?")
+        if "relativity" in domains:
+            questions.append("How do relativistic effects influence the outcome?")
+        if "thermodynamics" in domains:
+            questions.append("What are the thermodynamic constraints and considerations?")
+        
+        # Complexity-based questions
+        if complexity.get("level") == "advanced":
+            questions.append("What are the mathematical formulations underlying this concept?")
+            questions.append("How does this relate to current research frontiers?")
+        
+        return questions[:5]  # Limit to 5 questions 
