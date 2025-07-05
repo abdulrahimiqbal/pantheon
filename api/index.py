@@ -15,6 +15,8 @@ sys.path.insert(0, str(project_root / "orchestration"))
 # Import the FastAPI app
 try:
     from main import app
+    # Export the FastAPI app for Vercel ASGI
+    # Vercel will automatically detect this as an ASGI application
 except ImportError:
     # Fallback if import fails
     from fastapi import FastAPI
@@ -26,15 +28,4 @@ except ImportError:
             "error": "Failed to import main application",
             "status": "error",
             "message": "Please check the application configuration"
-        }
-
-# Vercel handler function
-def handler(request, response):
-    """Vercel serverless function handler."""
-    return app(request, response)
-
-# Export the app for Vercel
-# Vercel will use this as the ASGI application
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+        } 
