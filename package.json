@@ -1,0 +1,87 @@
+{
+  "name": "pantheon",
+  "version": "1.0.0",
+  "description": "AI Agent Swarm Orchestration Platform",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "dashboard"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd orchestration && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd dashboard && npm run dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd dashboard && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd orchestration && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
+    "start:frontend": "cd dashboard && npm run start",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "pytest",
+    "test:frontend": "cd dashboard && npm run test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "flake8 . && black --check . && isort --check-only .",
+    "lint:frontend": "cd dashboard && npm run lint",
+    "format": "npm run format:backend && npm run format:frontend",
+    "format:backend": "black . && isort .",
+    "format:frontend": "cd dashboard && npm run format",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "setup": "npm run setup:backend && npm run setup:frontend",
+    "setup:backend": "python -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "setup:frontend": "cd dashboard && npm install",
+    "db:migrate": "cd orchestration && alembic upgrade head",
+    "db:rollback": "cd orchestration && alembic downgrade -1",
+    "db:reset": "cd orchestration && alembic downgrade base && alembic upgrade head",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "find . -type d -name '__pycache__' -exec rm -rf {} + && find . -name '*.pyc' -delete",
+    "clean:frontend": "cd dashboard && rm -rf .next node_modules/.cache"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdulrahimiqbal/pantheon.git"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "swarm",
+    "orchestration",
+    "automation",
+    "multi-agent",
+    "ai-collaboration"
+  ],
+  "author": "Pantheon Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abdulrahimiqbal/pantheon/issues"
+  },
+  "homepage": "https://github.com/abdulrahimiqbal/pantheon#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.py": [
+      "black",
+      "isort",
+      "flake8"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0",
+    "python": ">=3.11.0"
+  }
+}
