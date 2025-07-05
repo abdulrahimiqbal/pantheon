@@ -1,10 +1,10 @@
 Vercel Build Trigger Test
 ========================
 
-Build ID: TRIGGER-013-DEPENDENCIES-FIX
-Timestamp: 2024-12-19 16:40:00
-Purpose: Fixed Python dependencies not being installed in Vercel function
-Status: Added api/requirements.txt, improved error handling, removed Pipfile conflicts
+Build ID: TRIGGER-014-REDIRECT-LOOP-FIX
+Timestamp: 2024-12-19 16:45:00
+Purpose: Fixed infinite redirect loop causing ERR_TOO_MANY_REDIRECTS
+Status: Changed from rewrites to routes, fixed destination path to api/index.py
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.
@@ -22,4 +22,5 @@ Previous triggers:
 - TRIGGER-010-PYTHON-RUNTIME-FIX: Fixed Python runtime config, removed explicit runtime spec
 - TRIGGER-011-PACKAGE-JSON-FIX: Fixed package.json build scripts, removed dashboard references
 - TRIGGER-012-PUBLIC-DIRECTORY-FIX: Created public directory and index.html to satisfy Vercel
-- TRIGGER-013-DEPENDENCIES-FIX: Fixed Python deps, added api/requirements.txt, better error handling 
+- TRIGGER-013-DEPENDENCIES-FIX: Fixed Python deps, added api/requirements.txt, better error handling
+- TRIGGER-014-REDIRECT-LOOP-FIX: Fixed infinite redirects, changed rewrites to routes config 
