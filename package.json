@@ -9,7 +9,7 @@
     "dev": "npm run dev:backend",
     "dev:backend": "cd orchestration && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:frontend": "echo 'Frontend dev skipped - dashboard removed'",
-    "build": "echo 'No build step needed for Python serverless function'",
+    "build": "mkdir -p public && echo 'Public directory ready for Vercel'",
     "build:frontend": "echo 'Frontend build skipped - dashboard removed'",
     "start": "npm run start:backend",
     "start:backend": "cd orchestration && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
