@@ -3,12 +3,16 @@
   "version": 2,
   "name": "pantheon",
   "functions": {
-    "api/index.py": {
+    "orchestration/main.py": {
       "maxDuration": 30
     }
   },
+  "routes": [
+    { "src": "/(.*)", "dest": "/orchestration/main.py" }
+  ],
   "env": {
-    "PYTHONPATH": "/var/task"
+    "PYTHONPATH": "/var/task",
+    "TAVILY_API_KEY": "demo_key"
   },
   "regions": ["iad1"],
   "github": {

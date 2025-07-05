@@ -337,13 +337,18 @@ async def not_found_handler(request, exc):
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
-    logger.error(f"Internal server error: {exc}")
+    """Handle internal server errors."""
+    logger.error(f"Internal server error: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"error": "Internal server error"}
+        content={"error": "Internal server error", "detail": str(exc)}
     )
 
-# For Vercel deployment
+# Export the app for Vercel
+# Vercel will use this as the ASGI application
+asgi_app = app
+
+# For local development
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 
