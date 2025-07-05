@@ -14,18 +14,22 @@ sys.path.insert(0, str(project_root / "orchestration"))
 
 # Import the main FastAPI app
 try:
-    from main import app
+    from main import app as main_app
+    
+    # The app is properly imported, export it for Vercel
+    app = main_app
+    
 except ImportError as e:
     # Create a minimal FastAPI app if main import fails
     from fastapi import FastAPI
     
     app = FastAPI(title="Pantheon Physics Swarm - Minimal", version="1.0.0")
     
-    @app.get("/api/health")
+    @app.get("/health")
     async def health_check():
         return {"status": "minimal_mode", "error": str(e)}
     
-    @app.get("/api/")
+    @app.get("/")
     async def root():
         return {
             "status": "minimal_mode",
@@ -33,6 +37,5 @@ except ImportError as e:
             "error": str(e)
         }
 
-# Export the app for Vercel
-# Vercel expects the ASGI app to be available as 'app' or a callable
-handler = app 
+# Export the ASGI app for Vercel
+# Vercel will automatically handle the /api/* routing 
