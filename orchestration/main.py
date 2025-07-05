@@ -1,7 +1,7 @@
 """
 FastAPI backend for the Pantheon Physics Swarm platform.
 This serves as the main API entry point for Vercel deployment.
-Build Version: 1.0.1 - Updated for Vercel deployment test
+Build Version: 1.0.2 - Root directory build test
 """
 
 import os
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Pantheon Physics Swarm API",
     description="AI Agent Swarm for Physics Research and Analysis",
-    version="1.0.1",
+    version="1.0.2",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
@@ -66,9 +66,10 @@ async def root():
     """Root API endpoint."""
     return {
         "message": "Pantheon Physics Swarm API",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "docs": "/api/docs",
-        "build_test": "Vercel deployment test triggered"
+        "build_test": "Root directory build test",
+        "timestamp": "2024-12-19"
     }
 
 # Frontend endpoint
@@ -166,7 +167,7 @@ async def frontend():
                  AI Agent Swarm for Physics Research and Analysis
              </p>
              <p style="text-align: center; color: #999; font-size: 12px; margin-bottom: 20px;">
-                 Version 1.0.1 - Vercel Build Test
+                 Version 1.0.2 - Root Directory Build Test ✅
              </p>
             
             <form id="physicsForm">
