@@ -1,0 +1,266 @@
+2025-07-05 15:45:07,309 - __main__ - INFO - 🚀 STARTING COMPREHENSIVE E2E TEST SUITE
+2025-07-05 15:45:07,309 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:07,309 - __main__ - INFO - 🧪 STARTING TEST: Project Structure Verification
+2025-07-05 15:45:07,309 - __main__ - INFO - ============================================================
+2025-07-05 15:45:07,309 - __main__ - INFO - ✅ Found required file: orchestration/main.py
+2025-07-05 15:45:07,309 - __main__ - INFO - ✅ Found required file: api/index.py
+2025-07-05 15:45:07,310 - __main__ - INFO - ✅ Found required file: api/requirements.txt
+2025-07-05 15:45:07,310 - __main__ - INFO - ✅ Found required file: public/index.html
+2025-07-05 15:45:07,310 - __main__ - INFO - ✅ Found required file: vercel.json
+2025-07-05 15:45:07,310 - __main__ - INFO - ✅ Found required file: package.json
+2025-07-05 15:45:07,310 - __main__ - INFO - ✅ PASSED: Project Structure
+2025-07-05 15:45:07,310 - __main__ - INFO - Details: All required files present
+2025-07-05 15:45:07,310 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:07,310 - __main__ - INFO - 🧪 STARTING TEST: FastAPI Import Test
+2025-07-05 15:45:07,310 - __main__ - INFO - ============================================================
+2025-07-05 15:45:07,315 - __main__ - INFO - ✅ Successfully imported FastAPI app from orchestration.main
+2025-07-05 15:45:07,315 - __main__ - INFO - ✅ App type: FastAPI
+2025-07-05 15:45:07,315 - __main__ - INFO - ✅ Registered routes: ['/openapi.json', '/docs', '/docs/oauth2-redirect', '/redoc', '/health', '/', '/physics/query', '/agents/status', '/config']
+2025-07-05 15:45:07,315 - __main__ - INFO - ✅ All expected routes are registered
+2025-07-05 15:45:07,315 - __main__ - INFO - ✅ PASSED: FastAPI Import
+2025-07-05 15:45:07,316 - __main__ - INFO - Details: App type: FastAPI, Routes: 9
+2025-07-05 15:45:07,316 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:07,316 - __main__ - INFO - 🧪 STARTING TEST: API Function Import Test
+2025-07-05 15:45:07,316 - __main__ - INFO - ============================================================
+2025-07-05 15:45:07,317 - __main__ - ERROR - ❌ Failed to import API function: No module named 'api.index'
+2025-07-05 15:45:07,317 - __main__ - INFO - ❌ FAILED: API Function Import
+2025-07-05 15:45:07,317 - __main__ - INFO - Details: No module named 'api.index'
+2025-07-05 15:45:07,317 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:07,317 - __main__ - INFO - 🧪 STARTING TEST: FastAPI Endpoints Test
+2025-07-05 15:45:07,317 - __main__ - INFO - ============================================================
+2025-07-05 15:45:07,317 - __main__ - INFO - Testing /health endpoint...
+2025-07-05 15:45:07,333 - httpx - INFO - HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+2025-07-05 15:45:07,334 - __main__ - INFO - Health endpoint - Status: 200, Response: {'status': 'healthy', 'service': 'pantheon-physics-swarm'}
+2025-07-05 15:45:07,334 - __main__ - INFO - Testing / endpoint...
+2025-07-05 15:45:07,335 - httpx - INFO - HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+2025-07-05 15:45:07,335 - __main__ - INFO - Root endpoint - Status: 200, Response: {'message': 'Pantheon Physics Swarm API', 'version': '1.1.0', 'docs': '/docs', 'build_test': 'RESET BUILD TEST - Framework: Other', 'timestamp': '2024-12-19T15:00:00Z', 'trigger_id': 'TRIGGER-005-RESET', 'status': 'Testing complete deployment pipeline'}
+2025-07-05 15:45:07,335 - __main__ - INFO - Testing /physics/query endpoint...
+2025-07-05 15:45:08,825 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-07-05 15:45:09,973 - orchestration.main - WARNING - Physics swarm not available: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.11/migration/#basesettings-has-moved-to-pydantic-settings for more details.
+
+For further information visit https://errors.pydantic.dev/2.11/u/import-error
+2025-07-05 15:45:09,975 - httpx - INFO - HTTP Request: POST http://testserver/physics/query "HTTP/1.1 200 OK"
+2025-07-05 15:45:09,975 - __main__ - INFO - Physics query endpoint - Status: 200
+2025-07-05 15:45:09,975 - __main__ - INFO - Physics query response: {'success': True, 'data': {'answer': 'Mock response for: What is the speed of light?', 'confidence': 0.8, 'sources': ['Mock source for demonstration'], 'agents_used': ['physicist_master', 'web_crawler'], 'note': 'This is a mock response. Full physics swarm not available in this deployment.'}, 'error': None, 'execution_time': 0.1}
+2025-07-05 15:45:09,975 - __main__ - INFO - Testing /agents/status endpoint...
+2025-07-05 15:45:09,977 - httpx - INFO - HTTP Request: GET http://testserver/agents/status "HTTP/1.1 200 OK"
+2025-07-05 15:45:09,977 - __main__ - INFO - Agents status endpoint - Status: 200, Response: {'success': True, 'agents': {'physicist_master': {'status': 'ready', 'last_used': None}, 'web_crawler': {'status': 'ready', 'last_used': None}, 'tesla_principles': {'status': 'ready', 'last_used': None}, 'curious_questioner': {'status': 'ready', 'last_used': None}}, 'note': 'Mock status - full physics swarm not available'}
+2025-07-05 15:45:09,977 - __main__ - INFO - Testing /config endpoint...
+2025-07-05 15:45:09,978 - httpx - INFO - HTTP Request: GET http://testserver/config "HTTP/1.1 200 OK"
+2025-07-05 15:45:09,978 - __main__ - INFO - Config endpoint - Status: 200, Response: {'features': {'physics_queries': True, 'agent_orchestration': True, 'source_validation': True, 'complexity_levels': ['basic', 'intermediate', 'advanced', 'research']}, 'agents': ['physicist_master', 'web_crawler', 'tesla_principles', 'curious_questioner'], 'version': '1.0.0'}
+2025-07-05 15:45:09,978 - __main__ - INFO - ✅ PASSED: FastAPI Endpoints
+2025-07-05 15:45:09,978 - __main__ - INFO - Details: All endpoints responding correctly
+2025-07-05 15:45:09,978 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:09,978 - __main__ - INFO - 🧪 STARTING TEST: Vercel Configuration Test
+2025-07-05 15:45:09,978 - __main__ - INFO - ============================================================
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ vercel.json is valid JSON
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ Vercel config: {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "name": "pantheon",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
+    },
+    "api/test.py": {
+      "runtime": "python3.9",
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "PYTHONPATH": "/var/task"
+  },
+  "regions": [
+    "iad1"
+  ],
+  "github": {
+    "enabled": true,
+    "autoAlias": true,
+    "silent": false
+  },
+  "ignoreCommand": "node vercel-build-check.js"
+}
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ api/index.py is configured in functions
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ Runtime specified: python3.9
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ PASSED: Vercel Configuration
+2025-07-05 15:45:09,979 - __main__ - INFO - Details: Configuration is valid
+2025-07-05 15:45:09,979 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:09,979 - __main__ - INFO - 🧪 STARTING TEST: API Requirements Test
+2025-07-05 15:45:09,979 - __main__ - INFO - ============================================================
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ api/requirements.txt exists and is readable
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ Requirements: ['# Essential dependencies for Vercel deployment', 'fastapi==0.104.1', 'uvicorn==0.24.0', 'pydantic==2.5.0', 'python-multipart==0.0.6', '', '# Basic utilities', 'python-dateutil==2.8.2', 'requests==2.31.0']
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ All essential packages found: ['fastapi', 'uvicorn', 'pydantic']
+2025-07-05 15:45:09,979 - __main__ - INFO - ✅ PASSED: API Requirements
+2025-07-05 15:45:09,979 - __main__ - INFO - Details: Found packages: ['fastapi', 'uvicorn', 'pydantic', 'python-multipart', 'python-dateutil', 'requests']
+2025-07-05 15:45:09,979 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:09,979 - __main__ - INFO - 🧪 STARTING TEST: Public Frontend Test
+2025-07-05 15:45:09,979 - __main__ - INFO - ============================================================
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ public/index.html exists and is readable
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ HTML content length: 6128 characters
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: <title>Pantheon Physics Swarm</title>
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: id="physicsForm"
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: id="query"
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: id="submitBtn"
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: /api/health
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ Found essential element: /api/physics/query
+2025-07-05 15:45:09,980 - __main__ - INFO - ✅ PASSED: Public Frontend
+2025-07-05 15:45:09,980 - __main__ - INFO - Details: All essential elements found
+2025-07-05 15:45:09,980 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:09,980 - __main__ - INFO - 🧪 STARTING TEST: Local Server Test
+2025-07-05 15:45:09,980 - __main__ - INFO - ============================================================
+2025-07-05 15:45:09,980 - __main__ - INFO - Starting local FastAPI server...
+2025-07-05 15:45:12,991 - __main__ - INFO - Testing local health endpoint...
+2025-07-05 15:45:13,004 - __main__ - INFO - Local health endpoint - Status: 200, Response: {'status': 'healthy', 'service': 'pantheon-physics-swarm'}
+2025-07-05 15:45:13,004 - __main__ - INFO - Testing local root endpoint...
+2025-07-05 15:45:13,008 - __main__ - INFO - Local root endpoint - Status: 200, Response: {'message': 'Pantheon Physics Swarm API', 'version': '1.1.0', 'docs': '/docs', 'build_test': 'RESET BUILD TEST - Framework: Other', 'timestamp': '2024-12-19T15:00:00Z', 'trigger_id': 'TRIGGER-005-RESET', 'status': 'Testing complete deployment pipeline'}
+2025-07-05 15:45:13,008 - __main__ - INFO - Testing local physics query endpoint...
+2025-07-05 15:45:18,984 - __main__ - INFO - Local physics query endpoint - Status: 200
+2025-07-05 15:45:19,289 - __main__ - INFO - ✅ PASSED: Local Server
+2025-07-05 15:45:19,289 - __main__ - INFO - Details: Local server tests passed
+2025-07-05 15:45:19,289 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:19,291 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:19,291 - __main__ - INFO - 🏁 TEST SUITE SUMMARY
+2025-07-05 15:45:19,293 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:19,293 - __main__ - INFO - Total Tests: 8
+2025-07-05 15:45:19,293 - __main__ - INFO - Passed: 7 ✅
+2025-07-05 15:45:19,293 - __main__ - INFO - Failed: 1 ❌
+2025-07-05 15:45:19,293 - __main__ - INFO - Pass Rate: 87.5%
+2025-07-05 15:45:19,293 - __main__ - INFO - Total Time: 11.98 seconds
+2025-07-05 15:45:19,293 - __main__ - ERROR - ⚠️ 1 tests failed. Fix issues before deployment.
+2025-07-05 15:45:19,294 - __main__ - ERROR - Failed tests: ['API Function Import']
+2025-07-05 15:45:19,296 - __main__ - INFO - 📊 Test results saved to e2e_test_results.json
+2025-07-05 15:45:47,661 - __main__ - INFO - 🚀 STARTING COMPREHENSIVE E2E TEST SUITE
+2025-07-05 15:45:47,662 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:47,662 - __main__ - INFO - 🧪 STARTING TEST: Project Structure Verification
+2025-07-05 15:45:47,662 - __main__ - INFO - ============================================================
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: orchestration/main.py
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: api/index.py
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: api/requirements.txt
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: public/index.html
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: vercel.json
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ Found required file: package.json
+2025-07-05 15:45:47,662 - __main__ - INFO - ✅ PASSED: Project Structure
+2025-07-05 15:45:47,663 - __main__ - INFO - Details: All required files present
+2025-07-05 15:45:47,663 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:47,663 - __main__ - INFO - 🧪 STARTING TEST: FastAPI Import Test
+2025-07-05 15:45:47,663 - __main__ - INFO - ============================================================
+2025-07-05 15:45:47,667 - __main__ - INFO - ✅ Successfully imported FastAPI app from orchestration.main
+2025-07-05 15:45:47,667 - __main__ - INFO - ✅ App type: FastAPI
+2025-07-05 15:45:47,667 - __main__ - INFO - ✅ Registered routes: ['/openapi.json', '/docs', '/docs/oauth2-redirect', '/redoc', '/health', '/', '/physics/query', '/agents/status', '/config']
+2025-07-05 15:45:47,667 - __main__ - INFO - ✅ All expected routes are registered
+2025-07-05 15:45:47,667 - __main__ - INFO - ✅ PASSED: FastAPI Import
+2025-07-05 15:45:47,667 - __main__ - INFO - Details: App type: FastAPI, Routes: 9
+2025-07-05 15:45:47,667 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:47,667 - __main__ - INFO - 🧪 STARTING TEST: API Function Import Test
+2025-07-05 15:45:47,667 - __main__ - INFO - ============================================================
+2025-07-05 15:45:47,673 - __main__ - INFO - ✅ Successfully imported api/index.py module
+2025-07-05 15:45:47,673 - __main__ - INFO - ✅ 'app' attribute found in api/index.py
+2025-07-05 15:45:47,673 - __main__ - INFO - ✅ API app type: FastAPI
+2025-07-05 15:45:47,673 - __main__ - INFO - ✅ API routes: ['/openapi.json', '/docs', '/docs/oauth2-redirect', '/redoc', '/health', '/', '/physics/query', '/agents/status', '/config']
+2025-07-05 15:45:47,673 - __main__ - INFO - ✅ PASSED: API Function Import
+2025-07-05 15:45:47,673 - __main__ - INFO - Details: App type: FastAPI
+2025-07-05 15:45:47,673 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:47,673 - __main__ - INFO - 🧪 STARTING TEST: FastAPI Endpoints Test
+2025-07-05 15:45:47,674 - __main__ - INFO - ============================================================
+2025-07-05 15:45:47,674 - __main__ - INFO - Testing /health endpoint...
+2025-07-05 15:45:47,695 - httpx - INFO - HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+2025-07-05 15:45:47,695 - __main__ - INFO - Health endpoint - Status: 200, Response: {'status': 'healthy', 'service': 'pantheon-physics-swarm'}
+2025-07-05 15:45:47,695 - __main__ - INFO - Testing / endpoint...
+2025-07-05 15:45:47,696 - httpx - INFO - HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+2025-07-05 15:45:47,697 - __main__ - INFO - Root endpoint - Status: 200, Response: {'message': 'Pantheon Physics Swarm API', 'version': '1.1.0', 'docs': '/docs', 'build_test': 'RESET BUILD TEST - Framework: Other', 'timestamp': '2024-12-19T15:00:00Z', 'trigger_id': 'TRIGGER-005-RESET', 'status': 'Testing complete deployment pipeline'}
+2025-07-05 15:45:47,697 - __main__ - INFO - Testing /physics/query endpoint...
+2025-07-05 15:45:49,286 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-07-05 15:45:50,446 - orchestration.main - WARNING - Physics swarm not available: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.11/migration/#basesettings-has-moved-to-pydantic-settings for more details.
+
+For further information visit https://errors.pydantic.dev/2.11/u/import-error
+2025-07-05 15:45:50,448 - httpx - INFO - HTTP Request: POST http://testserver/physics/query "HTTP/1.1 200 OK"
+2025-07-05 15:45:50,448 - __main__ - INFO - Physics query endpoint - Status: 200
+2025-07-05 15:45:50,448 - __main__ - INFO - Physics query response: {'success': True, 'data': {'answer': 'Mock response for: What is the speed of light?', 'confidence': 0.8, 'sources': ['Mock source for demonstration'], 'agents_used': ['physicist_master', 'web_crawler'], 'note': 'This is a mock response. Full physics swarm not available in this deployment.'}, 'error': None, 'execution_time': 0.1}
+2025-07-05 15:45:50,448 - __main__ - INFO - Testing /agents/status endpoint...
+2025-07-05 15:45:50,453 - httpx - INFO - HTTP Request: GET http://testserver/agents/status "HTTP/1.1 200 OK"
+2025-07-05 15:45:50,454 - __main__ - INFO - Agents status endpoint - Status: 200, Response: {'success': True, 'agents': {'physicist_master': {'status': 'ready', 'last_used': None}, 'web_crawler': {'status': 'ready', 'last_used': None}, 'tesla_principles': {'status': 'ready', 'last_used': None}, 'curious_questioner': {'status': 'ready', 'last_used': None}}, 'note': 'Mock status - full physics swarm not available'}
+2025-07-05 15:45:50,454 - __main__ - INFO - Testing /config endpoint...
+2025-07-05 15:45:50,455 - httpx - INFO - HTTP Request: GET http://testserver/config "HTTP/1.1 200 OK"
+2025-07-05 15:45:50,455 - __main__ - INFO - Config endpoint - Status: 200, Response: {'features': {'physics_queries': True, 'agent_orchestration': True, 'source_validation': True, 'complexity_levels': ['basic', 'intermediate', 'advanced', 'research']}, 'agents': ['physicist_master', 'web_crawler', 'tesla_principles', 'curious_questioner'], 'version': '1.0.0'}
+2025-07-05 15:45:50,455 - __main__ - INFO - ✅ PASSED: FastAPI Endpoints
+2025-07-05 15:45:50,455 - __main__ - INFO - Details: All endpoints responding correctly
+2025-07-05 15:45:50,455 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:50,455 - __main__ - INFO - 🧪 STARTING TEST: Vercel Configuration Test
+2025-07-05 15:45:50,456 - __main__ - INFO - ============================================================
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ vercel.json is valid JSON
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ Vercel config: {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "name": "pantheon",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
+    },
+    "api/test.py": {
+      "runtime": "python3.9",
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "PYTHONPATH": "/var/task"
+  },
+  "regions": [
+    "iad1"
+  ],
+  "github": {
+    "enabled": true,
+    "autoAlias": true,
+    "silent": false
+  },
+  "ignoreCommand": "node vercel-build-check.js"
+}
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ api/index.py is configured in functions
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ Runtime specified: python3.9
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ PASSED: Vercel Configuration
+2025-07-05 15:45:50,456 - __main__ - INFO - Details: Configuration is valid
+2025-07-05 15:45:50,456 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:50,456 - __main__ - INFO - 🧪 STARTING TEST: API Requirements Test
+2025-07-05 15:45:50,456 - __main__ - INFO - ============================================================
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ api/requirements.txt exists and is readable
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ Requirements: ['# Essential dependencies for Vercel deployment', 'fastapi==0.104.1', 'uvicorn==0.24.0', 'pydantic==2.5.0', 'python-multipart==0.0.6', '', '# Basic utilities', 'python-dateutil==2.8.2', 'requests==2.31.0']
+2025-07-05 15:45:50,456 - __main__ - INFO - ✅ All essential packages found: ['fastapi', 'uvicorn', 'pydantic']
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ PASSED: API Requirements
+2025-07-05 15:45:50,457 - __main__ - INFO - Details: Found packages: ['fastapi', 'uvicorn', 'pydantic', 'python-multipart', 'python-dateutil', 'requests']
+2025-07-05 15:45:50,457 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:50,457 - __main__ - INFO - 🧪 STARTING TEST: Public Frontend Test
+2025-07-05 15:45:50,457 - __main__ - INFO - ============================================================
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ public/index.html exists and is readable
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ HTML content length: 6128 characters
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: <title>Pantheon Physics Swarm</title>
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: id="physicsForm"
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: id="query"
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: id="submitBtn"
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: /api/health
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ Found essential element: /api/physics/query
+2025-07-05 15:45:50,457 - __main__ - INFO - ✅ PASSED: Public Frontend
+2025-07-05 15:45:50,457 - __main__ - INFO - Details: All essential elements found
+2025-07-05 15:45:50,457 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:50,458 - __main__ - INFO - 🧪 STARTING TEST: Local Server Test
+2025-07-05 15:45:50,458 - __main__ - INFO - ============================================================
+2025-07-05 15:45:50,458 - __main__ - INFO - Starting local FastAPI server...
+2025-07-05 15:45:53,469 - __main__ - INFO - Testing local health endpoint...
+2025-07-05 15:45:53,480 - __main__ - INFO - Local health endpoint - Status: 200, Response: {'status': 'healthy', 'service': 'pantheon-physics-swarm'}
+2025-07-05 15:45:53,480 - __main__ - INFO - Testing local root endpoint...
+2025-07-05 15:45:53,483 - __main__ - INFO - Local root endpoint - Status: 200, Response: {'message': 'Pantheon Physics Swarm API', 'version': '1.1.0', 'docs': '/docs', 'build_test': 'RESET BUILD TEST - Framework: Other', 'timestamp': '2024-12-19T15:00:00Z', 'trigger_id': 'TRIGGER-005-RESET', 'status': 'Testing complete deployment pipeline'}
+2025-07-05 15:45:53,483 - __main__ - INFO - Testing local physics query endpoint...
+2025-07-05 15:45:56,222 - __main__ - INFO - Local physics query endpoint - Status: 200
+2025-07-05 15:45:56,428 - __main__ - INFO - ✅ PASSED: Local Server
+2025-07-05 15:45:56,429 - __main__ - INFO - Details: Local server tests passed
+2025-07-05 15:45:56,429 - __main__ - INFO - ------------------------------------------------------------
+2025-07-05 15:45:56,429 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:56,429 - __main__ - INFO - 🏁 TEST SUITE SUMMARY
+2025-07-05 15:45:56,429 - __main__ - INFO - ================================================================================
+2025-07-05 15:45:56,429 - __main__ - INFO - Total Tests: 8
+2025-07-05 15:45:56,429 - __main__ - INFO - Passed: 8 ✅
+2025-07-05 15:45:56,429 - __main__ - INFO - Failed: 0 ❌
+2025-07-05 15:45:56,430 - __main__ - INFO - Pass Rate: 100.0%
+2025-07-05 15:45:56,430 - __main__ - INFO - Total Time: 8.77 seconds
+2025-07-05 15:45:56,430 - __main__ - INFO - 🎉 ALL TESTS PASSED! Ready for deployment!
+2025-07-05 15:45:56,430 - __main__ - INFO - 📊 Test results saved to e2e_test_results.json

@@ -14,12 +14,10 @@ sys.path.insert(0, str(project_root / "orchestration"))
 
 # Import the main FastAPI app
 try:
-    from main import app as main_app
-    
-    # The app is properly imported, export it for Vercel
-    app = main_app
-    
+    from main import app
+    print("✅ Successfully imported main FastAPI app")
 except ImportError as e:
+    print(f"❌ Failed to import main app: {e}")
     # Create a minimal FastAPI app if main import fails
     from fastapi import FastAPI
     
@@ -37,5 +35,5 @@ except ImportError as e:
             "error": str(e)
         }
 
-# Export the ASGI app for Vercel
-# Vercel will automatically handle the /api/* routing 
+# This is the ASGI application that Vercel will use
+# Vercel expects either 'app' or 'handler' to be defined 

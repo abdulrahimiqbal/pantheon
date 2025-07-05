@@ -1,26 +1,31 @@
-TRIGGER-017-API-ROUTING-FIX
+TRIGGER-019-RUNTIME-CONFIG-FIX
 
-Build ID: TRIGGER-017-API-ROUTING-FIX
-Timestamp: 2024-12-19 17:30:00
-Purpose: Fix API routing to return JSON instead of HTML
+Build ID: TRIGGER-019-RUNTIME-CONFIG-FIX
+Timestamp: 2024-12-19 18:00:00
+Purpose: Fix Python runtime configuration and function deployment
 
-CRITICAL FIXES:
-1. Fixed FastAPI routes to remove /api/ prefix (Vercel adds it automatically)
-2. Removed conflicting frontend route from FastAPI app
-3. Clean separation: static files serve frontend, API functions serve JSON
-4. Fixed api/index.py to properly export FastAPI app
-5. Updated route paths: /health, /physics/query, /agents/status, /config
+CRITICAL ISSUE:
+- Both complex FastAPI function and simple test function returning "The page could not be found"
+- Suggests fundamental issue with Python function deployment on Vercel
+- No functions are being recognized/deployed properly
 
-ARCHITECTURE:
-- Static frontend: /public/index.html → served at /
-- API functions: /api/index.py → serves JSON at /api/*
-- No more HTML/JSON conflicts, proper Content-Type headers
+FIXES APPLIED:
+1. Added explicit "runtime": "python3.9" to all functions in vercel.json
+2. Created simple test function (api/test.py) using BaseHTTPRequestHandler
+3. Configured both api/index.py and api/test.py in functions section
+4. Using Python 3.9 runtime (known to work with Vercel)
+
+DEBUGGING STEPS:
+- Test simple function: /api/test should return JSON
+- Test main function: /api/health should return JSON
+- Check if runtime specification resolves deployment issues
+- Verify function logs show successful deployment
 
 EXPECTED RESULT:
-- Frontend loads properly from static files
-- API calls return JSON (not HTML)
-- No more "Unexpected token 'T'" errors
-- Proper API status display
+- /api/test should return: {"status": "working", "message": "Simple test function is working"}
+- /api/health should return: {"status": "healthy", "service": "pantheon-physics-swarm"}
+- No more "The page could not be found" errors
+- Python functions should be properly recognized and deployed
 
 This file exists solely to trigger Vercel builds when GitHub pushes occur.
 Each change to this file should trigger a new deployment.

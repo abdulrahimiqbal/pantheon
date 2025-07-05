@@ -1,0 +1,68 @@
+{
+  "total_tests": 8,
+  "passed": 8,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "total_time": 8.767194986343384,
+  "passed_tests": [
+    "Project Structure",
+    "FastAPI Import",
+    "API Function Import",
+    "FastAPI Endpoints",
+    "Vercel Configuration",
+    "API Requirements",
+    "Public Frontend",
+    "Local Server"
+  ],
+  "failed_tests": [],
+  "detailed_results": [
+    {
+      "test": "Project Structure",
+      "passed": true,
+      "details": "All required files present",
+      "timestamp": 1751744747.6630661
+    },
+    {
+      "test": "FastAPI Import",
+      "passed": true,
+      "details": "App type: FastAPI, Routes: 9",
+      "timestamp": 1751744747.667841
+    },
+    {
+      "test": "API Function Import",
+      "passed": true,
+      "details": "App type: FastAPI",
+      "timestamp": 1751744747.673971
+    },
+    {
+      "test": "FastAPI Endpoints",
+      "passed": true,
+      "details": "All endpoints responding correctly",
+      "timestamp": 1751744750.455937
+    },
+    {
+      "test": "Vercel Configuration",
+      "passed": true,
+      "details": "Configuration is valid",
+      "timestamp": 1751744750.4567392
+    },
+    {
+      "test": "API Requirements",
+      "passed": true,
+      "details": "Found packages: ['fastapi', 'uvicorn', 'pydantic', 'python-multipart', 'python-dateutil', 'requests']",
+      "timestamp": 1751744750.457155
+    },
+    {
+      "test": "Public Frontend",
+      "passed": true,
+      "details": "All essential elements found",
+      "timestamp": 1751744750.458
+    },
+    {
+      "test": "Local Server",
+      "passed": true,
+      "details": "Local server tests passed",
+      "timestamp": 1751744756.429268
+    }
+  ]
+}
