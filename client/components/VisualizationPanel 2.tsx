@@ -164,7 +164,7 @@ export default function VisualizationPanel() {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <TrendingUp className="w-6 h-6 text-orange-primary" />
+            <TrendingUp className="w-6 h-6 text-purple-primary" />
             <h2 className="text-2xl font-bold text-white">Data Visualization</h2>
           </div>
           
@@ -196,7 +196,7 @@ export default function VisualizationPanel() {
                 onClick={() => setActiveChart(chart.id)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                   activeChart === chart.id
-                    ? 'bg-gradient-to-r from-orange-primary to-orange-secondary text-white'
+                    ? 'bg-gradient-to-r from-purple-primary to-purple-secondary text-white'
                     : 'bg-background-tertiary text-gray-medium hover:text-white hover:bg-background-secondary'
                 }`}
               >
@@ -223,7 +223,7 @@ export default function VisualizationPanel() {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-semibold text-white">Recent Experiments</h3>
-            <button className="text-orange-primary hover:text-orange-secondary text-sm">
+            <button className="text-purple-primary hover:text-purple-secondary text-sm">
               View All
             </button>
           </div>
@@ -231,7 +231,7 @@ export default function VisualizationPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-orange-primary/20">
+                <tr className="border-b border-purple-primary/20">
                   <th className="text-left text-gray-medium py-2">Name</th>
                   <th className="text-left text-gray-medium py-2">Status</th>
                   <th className="text-left text-gray-medium py-2">Progress</th>
@@ -261,7 +261,7 @@ export default function VisualizationPanel() {
                       <div className="flex items-center space-x-2">
                         <div className="w-16 bg-background-secondary rounded-full h-2">
                           <div
-                            className="h-2 bg-gradient-to-r from-orange-primary to-orange-accent rounded-full"
+                            className="h-2 bg-gradient-to-r from-purple-primary to-purple-accent rounded-full"
                             style={{ width: `${experiment.progress}%` }}
                           ></div>
                         </div>
@@ -294,7 +294,7 @@ export default function VisualizationPanel() {
               { label: 'Hypothesis Accuracy', value: 87, color: 'bg-green-500' },
               { label: 'Processing Speed', value: 92, color: 'bg-blue-500' },
               { label: 'Data Quality', value: 78, color: 'bg-yellow-500' },
-              { label: 'Model Confidence', value: 85, color: 'bg-orange-500' },
+              { label: 'Model Confidence', value: 85, color: 'bg-purple-500' },
             ].map((metric, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex justify-between items-center">

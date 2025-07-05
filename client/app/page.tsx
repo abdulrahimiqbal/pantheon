@@ -4,27 +4,172 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
-import Dashboard from '@/components/Dashboard'
 import ResearchPanel from '@/components/ResearchPanel'
 import VisualizationPanel from '@/components/VisualizationPanel'
 import ConfigPanel from '@/components/ConfigPanel'
+// import CursorEffect from '@/components/CursorEffect'
+
+interface Chat {
+  id: string
+  name: string
+  lastMessage: string
+  timestamp: string
+}
+
+interface Message {
+  id: string
+  text: string
+  type: 'user' | 'assistant'
+  timestamp: string
+}
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('chat')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [chats, setChats] = useState<Chat[]>([])
+  const [activeChat, setActiveChat] = useState<string | null>(null)
+  const [messages, setMessages] = useState<{ [chatId: string]: Message[] }>({})
+
+  const generateChatId = () => {
+    return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  const generateMessageId = () => {
+    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  const handleNewChat = () => {
+    const newChatId = generateChatId()
+    const newChat: Chat = {
+      id: newChatId,
+      name: `New Research Chat ${chats.length + 1}`,
+      lastMessage: 'Start your research conversation...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+    
+    setChats(prev => [newChat, ...prev])
+    setActiveChat(newChatId)
+    setMessages(prev => ({ ...prev, [newChatId]: [] }))
+  }
+
+  const handleChatSelect = (chatId: string) => {
+    setActiveChat(chatId)
+  }
+
+  const handleDeleteChat = (chatId: string) => {
+    setChats(prev => prev.filter(chat => chat.id !== chatId))
+    setMessages(prev => {
+      const newMessages = { ...prev }
+      delete newMessages[chatId]
+      return newMessages
+    })
+    
+    if (activeChat === chatId) {
+      const remainingChats = chats.filter(chat => chat.id !== chatId)
+      setActiveChat(remainingChats.length > 0 ? remainingChats[0].id : null)
+    }
+  }
+
+  const handleRenameChat = (chatId: string, newName: string) => {
+    setChats(prev => prev.map(chat => 
+      chat.id === chatId ? { ...chat, name: newName } : chat
+    ))
+  }
+
+  // Generate AI response based on user input
+  const generateAIResponse = async (messageText: string): Promise<string> => {
+    // This is where you would integrate with your actual AI backend
+    // For now, providing more realistic physics-focused responses
+    
+    const responses = [
+      `Regarding "${messageText}", this touches on fundamental principles in theoretical physics. Let me break down the key concepts and their implications for current research.`,
+      `That's an excellent question about "${messageText}". In the context of modern physics, this relates to several cutting-edge areas of study including quantum mechanics and relativity.`,
+      `Your inquiry about "${messageText}" is particularly relevant to current research in particle physics and cosmology. Here's what the latest findings suggest...`,
+      `The topic of "${messageText}" intersects with some fascinating areas of physics research. Let me explain the theoretical framework and experimental evidence.`,
+      `"${messageText}" is a complex subject that involves multiple branches of physics. The current scientific consensus and ongoing research directions are quite intriguing.`
+    ]
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
+    
+    return responses[Math.floor(Math.random() * responses.length)]
+  }
+
+  const handleSendMessage = async (chatId: string, messageText: string) => {
+    const userMessage: Message = {
+      id: generateMessageId(),
+      text: messageText,
+      type: 'user',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+    
+    setMessages(prev => ({
+      ...prev,
+      [chatId]: [...(prev[chatId] || []), userMessage]
+    }))
+    
+    // Update chat's last message
+    setChats(prev => prev.map(chat => 
+      chat.id === chatId 
+        ? { ...chat, lastMessage: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''), timestamp: userMessage.timestamp }
+        : chat
+    ))
+    
+    // Generate AI response
+    try {
+      const aiResponseText = await generateAIResponse(messageText)
+      const aiMessage: Message = {
+        id: generateMessageId(),
+        text: aiResponseText,
+        type: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      
+      setMessages(prev => ({
+        ...prev,
+        [chatId]: [...(prev[chatId] || []), aiMessage]
+      }))
+      
+      // Update chat's last message with AI response
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, lastMessage: aiMessage.text.substring(0, 50) + (aiMessage.text.length > 50 ? '...' : ''), timestamp: aiMessage.timestamp }
+          : chat
+      ))
+    } catch (error) {
+      console.error('Failed to generate AI response:', error)
+    }
+  }
+
+  // Function to get AI response for voice chat
+  const getAIResponse = async (messageText: string): Promise<string> => {
+    return await generateAIResponse(messageText)
+  }
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />
-      case 'research':
-        return <ResearchPanel />
+      case 'chat':
+        return (
+          <ResearchPanel 
+            activeChat={activeChat}
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            onGetAIResponse={getAIResponse}
+          />
+        )
       case 'visualization':
         return <VisualizationPanel />
       case 'config':
         return <ConfigPanel />
       default:
-        return <Dashboard />
+        return (
+          <ResearchPanel 
+            activeChat={activeChat}
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            onGetAIResponse={getAIResponse}
+          />
+        )
     }
   }
 
@@ -35,6 +180,12 @@ export default function Home() {
         setActiveTab={setActiveTab}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
+        chats={chats}
+        activeChat={activeChat}
+        onChatSelect={handleChatSelect}
+        onNewChat={handleNewChat}
+        onDeleteChat={handleDeleteChat}
+        onRenameChat={handleRenameChat}
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -52,6 +203,9 @@ export default function Home() {
           </motion.div>
         </main>
       </div>
+      
+      {/* Custom Cursor Effect - Disabled */}
+      {/* <CursorEffect /> */}
     </div>
   )
 }

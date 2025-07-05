@@ -30,8 +30,8 @@ export default function SystemMetrics() {
       label: 'Network',
       value: 78,
       icon: Wifi,
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-500/20'
+      color: 'text-purple-400',
+      bgColor: 'bg-purple-500/20'
     }
   ]
 
@@ -70,7 +70,7 @@ export default function SystemMetrics() {
         )
       })}
       
-      <div className="pt-4 border-t border-orange-primary/20">
+      <div className="pt-4 border-t border-purple-primary/20">
         <div className="text-center">
           <p className="text-xs text-gray-medium">Last updated: 2 seconds ago</p>
         </div>

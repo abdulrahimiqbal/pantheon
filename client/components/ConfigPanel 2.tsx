@@ -86,7 +86,7 @@ export default function ConfigPanel() {
     {
       title: 'AI Model Configuration',
       icon: Brain,
-      color: 'text-orange-primary',
+      color: 'text-purple-primary',
       settings: [
         {
           key: 'modelTemperature',
@@ -272,7 +272,7 @@ export default function ConfigPanel() {
               <button
                 onClick={() => handleConfigChange(setting.key, !value)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  value ? 'bg-orange-primary' : 'bg-background-secondary'
+                  value ? 'bg-purple-primary' : 'bg-background-secondary'
                 }`}
               >
                 <span
@@ -321,7 +321,7 @@ export default function ConfigPanel() {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Sliders className="w-6 h-6 text-orange-primary" />
+            <Sliders className="w-6 h-6 text-purple-primary" />
             <h2 className="text-2xl font-bold text-white">System Configuration</h2>
           </div>
           

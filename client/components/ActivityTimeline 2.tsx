@@ -47,7 +47,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
                     ? 'bg-yellow-500/20 text-yellow-400'
                     : activity.status === 'attention'
                     ? 'bg-red-500/20 text-red-400'
-                    : 'bg-orange-500/20 text-orange-400'
+                    : 'bg-purple-500/20 text-purple-400'
                 }`}>
                   {activity.status}
                 </span>
@@ -61,7 +61,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
       })}
       
       <div className="text-center pt-4">
-        <button className="text-orange-primary hover:text-orange-secondary text-sm font-medium transition-colors">
+        <button className="text-purple-primary hover:text-purple-secondary text-sm font-medium transition-colors">
           View All Activities
         </button>
       </div>

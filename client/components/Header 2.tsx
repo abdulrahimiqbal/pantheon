@@ -9,7 +9,7 @@ export default function Header() {
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="bg-background-secondary/50 backdrop-blur-sm border-b border-orange-primary/20 px-6 py-4"
+      className="bg-background-secondary/50 backdrop-blur-sm border-b border-purple-primary/20 px-6 py-4"
     >
       <div className="flex items-center justify-between">
         {/* Search Bar */}
@@ -19,7 +19,7 @@ export default function Header() {
             <input
               type="text"
               placeholder="Search research, experiments, or data..."
-              className="w-full pl-10 pr-4 py-2 bg-background-tertiary border border-orange-primary/30 rounded-lg text-gray-light placeholder-gray-medium focus:outline-none focus:border-orange-primary focus:ring-2 focus:ring-orange-primary/20 transition-all duration-200"
+              className="w-full pl-10 pr-4 py-2 bg-background-tertiary border border-purple-primary/30 rounded-lg text-gray-light placeholder-gray-medium focus:outline-none focus:border-purple-primary focus:ring-2 focus:ring-purple-primary/20 transition-all duration-200"
             />
           </div>
         </div>
@@ -35,12 +35,12 @@ export default function Header() {
           {/* Notifications */}
           <button className="relative p-2 rounded-lg hover:bg-background-tertiary transition-colors">
             <Bell className="w-5 h-5 text-gray-medium" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-primary rounded-full"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-primary rounded-full"></span>
           </button>
 
           {/* User Profile */}
           <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-background-tertiary transition-colors">
-            <div className="w-8 h-8 bg-gradient-to-r from-orange-primary to-orange-accent rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-primary to-purple-accent rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
             <span className="text-sm text-gray-light">Researcher</span>

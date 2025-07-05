@@ -5,229 +5,211 @@ import { motion } from 'framer-motion'
 import { 
   Send, 
   Upload, 
-  FileText, 
-  Brain, 
-  Lightbulb,
-  Clock,
-  CheckCircle,
-  AlertTriangle
+  Brain,
+  Mic
 } from 'lucide-react'
+import VoiceChat from './VoiceChat'
 
-export default function ResearchPanel() {
+interface Message {
+  id: string
+  text: string
+  type: 'user' | 'assistant'
+  timestamp: string
+}
+
+interface ResearchPanelProps {
+  activeChat: string | null
+  messages: { [chatId: string]: Message[] }
+  onSendMessage: (chatId: string, message: string) => void
+  onGetAIResponse?: (message: string) => Promise<string>
+}
+
+export default function ResearchPanel({ activeChat, messages, onSendMessage, onGetAIResponse }: ResearchPanelProps) {
   const [inputText, setInputText] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showVoiceChat, setShowVoiceChat] = useState(false)
+  
+  const currentMessages = activeChat ? messages[activeChat] || [] : []
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputText.trim()) return
+    if (!inputText.trim() || !activeChat) return
     
     setIsProcessing(true)
-    // Simulate processing
+    onSendMessage(activeChat, inputText.trim())
+    setInputText('')
+    
+    // Simulate AI response
     setTimeout(() => {
       setIsProcessing(false)
-      setInputText('')
-    }, 3000)
+    }, 2000)
   }
 
-  const recentHypotheses = [
-    {
-      id: 1,
-      title: "Quantum Field Fluctuations in Dark Energy",
-      status: "validated",
-      confidence: 87,
-      timestamp: "2 hours ago",
-      icon: CheckCircle,
-      color: "text-green-400"
-    },
-    {
-      id: 2,
-      title: "Modified Gravity at Galactic Scales",
-      status: "testing",
-      confidence: 72,
-      timestamp: "4 hours ago",
-      icon: Clock,
-      color: "text-yellow-400"
-    },
-    {
-      id: 3,
-      title: "Neutrino Mass Hierarchy Resolution",
-      status: "needs-review",
-      confidence: 65,
-      timestamp: "6 hours ago",
-      icon: AlertTriangle,
-      color: "text-orange-400"
-    }
-  ]
-
   return (
-    <div className="space-y-6">
-      {/* Research Input Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="glass-panel p-6"
-      >
-        <div className="flex items-center space-x-3 mb-6">
-          <Brain className="w-6 h-6 text-purple-primary" />
+    <div className="h-full flex flex-col bg-background-primary">
+      {/* Header */}
+      <div className="p-6 border-b border-orange-primary/20">
+        <div className="flex items-center space-x-3">
+          <Brain className="w-6 h-6 text-orange-primary" />
           <h2 className="text-2xl font-bold text-white">Research Assistant</h2>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-light mb-2">
-              Research Query or Hypothesis
-            </label>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Enter your research question, hypothesis, or data for analysis..."
-              className="w-full h-32 input-field resize-none"
-              disabled={isProcessing}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                type="button"
-                className="btn-secondary flex items-center space-x-2"
-                disabled={isProcessing}
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload Data</span>
-              </button>
-              
-              <button
-                type="button"
-                className="btn-secondary flex items-center space-x-2"
-                disabled={isProcessing}
-              >
-                <FileText className="w-4 h-4" />
-                <span>Load Template</span>
-              </button>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {!activeChat ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Brain className="w-16 h-16 text-orange-primary mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Welcome to Pantheon AI</h3>
+              <p className="text-gray-medium mb-4">Select a chat or create a new one to start your research conversation</p>
             </div>
-
-            <button
-              type="submit"
-              disabled={isProcessing || !inputText.trim()}
-              className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="loading-dots">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Analyze</span>
-                </>
-              )}
-            </button>
           </div>
-        </form>
-      </motion.div>
-
-      {/* Results Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Hypotheses */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="glass-panel p-6"
-        >
-          <div className="flex items-center space-x-3 mb-6">
-            <Lightbulb className="w-5 h-5 text-yellow-400" />
-            <h3 className="text-xl font-semibold text-white">Recent Hypotheses</h3>
-          </div>
-
+        ) : (
           <div className="space-y-4">
-            {recentHypotheses.map((hypothesis, index) => {
-              const Icon = hypothesis.icon
-              
-              return (
-                <motion.div
-                  key={hypothesis.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="p-4 rounded-lg bg-background-tertiary/50 hover:bg-background-tertiary transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start space-x-3">
-                    <Icon className={`w-5 h-5 ${hypothesis.color} mt-1`} />
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium mb-1">
-                        {hypothesis.title}
-                      </h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-medium">
-                        <span>Confidence: {hypothesis.confidence}%</span>
-                        <span>{hypothesis.timestamp}</span>
-                      </div>
-                      <div className="mt-2">
-                        <div className="w-full bg-background-secondary rounded-full h-1">
-                          <div
-                            className="h-1 bg-gradient-to-r from-purple-primary to-purple-accent rounded-full"
-                            style={{ width: `${hypothesis.confidence}%` }}
-                          ></div>
-                        </div>
-                      </div>
+            {currentMessages.length === 0 ? (
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-orange-primary to-orange-accent rounded-full flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-light leading-relaxed">
+                    Welcome to Pantheon AI Research Assistant. I'm here to help you explore complex physics concepts, 
+                    validate hypotheses, and accelerate your research. What would you like to investigate today?
+                  </p>
+                </div>
+              </div>
+            ) : (
+              currentMessages.map((message) => (
+                <div key={message.id} className={`flex items-start space-x-3 ${
+                  message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    message.type === 'user' 
+                      ? 'bg-background-tertiary' 
+                      : 'bg-gradient-to-r from-orange-primary to-orange-accent'
+                  }`}>
+                    {message.type === 'user' ? (
+                      <div className="w-4 h-4 bg-gray-medium rounded-full" />
+                    ) : (
+                      <Brain className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  <div className={`flex-1 ${
+                    message.type === 'user' ? 'text-right' : ''
+                  }`}>
+                    <div className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                      message.type === 'user'
+                        ? 'bg-orange-primary/20 text-white'
+                        : 'bg-background-secondary text-gray-light'
+                    }`}>
+                      <p className="leading-relaxed">{message.text}</p>
+                    </div>
+                    <p className="text-xs text-gray-medium mt-1">{message.timestamp}</p>
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {isProcessing && (
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-orange-primary to-orange-accent rounded-full flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-4 h-4 text-white animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <div className="bg-background-secondary p-3 rounded-lg">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-orange-primary rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-orange-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-orange-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
-                </motion.div>
-              )
-            })}
+                </div>
+              </div>
+            )}
           </div>
-        </motion.div>
-
-        {/* Research Insights */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="glass-panel p-6"
-        >
-          <div className="flex items-center space-x-3 mb-6">
-            <Brain className="w-5 h-5 text-purple-primary" />
-            <h3 className="text-xl font-semibold text-white">AI Insights</h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-gradient-to-r from-purple-primary/10 to-purple-accent/10 border border-purple-primary/20">
-              <h4 className="text-white font-medium mb-2">Trending Research Areas</h4>
-              <ul className="space-y-1 text-sm text-gray-light">
-                <li>• Quantum gravity phenomenology</li>
-                <li>• Dark matter direct detection</li>
-                <li>• Cosmological parameter estimation</li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg bg-gradient-to-r from-blue-primary/10 to-blue-accent/10 border border-blue-primary/20">
-              <h4 className="text-white font-medium mb-2">Suggested Experiments</h4>
-              <ul className="space-y-1 text-sm text-gray-light">
-                <li>• High-energy particle collision analysis</li>
-                <li>• Gravitational wave data mining</li>
-                <li>• Stellar nucleosynthesis modeling</li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg bg-gradient-to-r from-green-primary/10 to-green-accent/10 border border-green-primary/20">
-              <h4 className="text-white font-medium mb-2">Data Correlations</h4>
-              <ul className="space-y-1 text-sm text-gray-light">
-                <li>• CMB temperature fluctuations</li>
-                <li>• Supernovae luminosity distances</li>
-                <li>• Galaxy cluster mass distributions</li>
-              </ul>
-            </div>
-          </div>
-        </motion.div>
+        )}
       </div>
+
+      {/* Input Area */}
+      <div className="p-6 border-t border-orange-primary/20">
+        {activeChat ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex space-x-3">
+              <div className="flex-1">
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Ask about quantum mechanics, relativity, particle physics, or any research question..."
+                  className="w-full h-20 p-4 bg-background-secondary border border-orange-primary/30 rounded-lg text-white placeholder-gray-medium resize-none focus:outline-none focus:border-orange-primary focus:ring-2 focus:ring-orange-primary/20 transition-all duration-200"
+                  disabled={isProcessing}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSubmit(e)
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex flex-col space-y-2">
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isProcessing}
+                  className="p-3 bg-gradient-to-r from-orange-primary to-orange-accent text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {isProcessing ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Brain className="w-5 h-5" />
+                    </motion.div>
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="p-3 bg-background-tertiary text-gray-medium rounded-lg hover:text-white hover:bg-background-secondary transition-all duration-200"
+                  title="Upload file"
+                >
+                  <Upload className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowVoiceChat(!showVoiceChat)}
+                  className={`p-3 rounded-lg transition-all duration-200 ${
+                    showVoiceChat 
+                      ? 'bg-gradient-to-r from-orange-primary to-orange-accent text-white shadow-lg' 
+                      : 'bg-background-tertiary text-gray-medium hover:text-white hover:bg-background-secondary'
+                  }`}
+                  title="Voice Chat"
+                >
+                  <Mic className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </form>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-medium">Select or create a chat to start your research conversation</p>
+          </div>
+        )}  
+      </div>
+      
+      {/* Voice Chat Modal */}
+      {showVoiceChat && (
+        <VoiceChat
+          isOpen={showVoiceChat}
+          onClose={() => setShowVoiceChat(false)}
+          onSendMessage={(message: string) => {
+            if (activeChat) {
+              onSendMessage(activeChat, message)
+            }
+          }}
+          onGetAIResponse={onGetAIResponse}
+        />
+      )}
     </div>
   )
 }
