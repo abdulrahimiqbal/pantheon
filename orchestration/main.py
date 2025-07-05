@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import logging
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files from the public directory
+app.mount("/static", StaticFiles(directory=str(project_root / "public")), name="static")
 
 # Global variables for orchestration
 swarm_orchestrator = None
@@ -116,6 +120,12 @@ async def root():
         "status": "Physics swarm ready for queries",
         "swarm_initialized": swarm_status["initialized"]
     }
+
+# Serve the frontend HTML file
+@app.get("/ui")
+async def serve_ui():
+    """Serve the frontend UI."""
+    return FileResponse(str(project_root / "public" / "index.html"))
 
 # Physics query endpoint
 @app.post("/physics/query", response_model=SwarmResponse)
@@ -351,4 +361,4 @@ asgi_app = app
 # For local development
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)

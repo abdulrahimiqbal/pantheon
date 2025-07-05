@@ -49,6 +49,7 @@
             cursor: pointer;
             font-size: 16px;
             width: 100%;
+            margin-bottom: 10px;
         }
         button:hover {
             background-color: #0056b3;
@@ -56,6 +57,30 @@
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .button-group button {
+            flex: 1;
+            min-width: 200px;
+        }
+        .health-button {
+            background-color: #28a745;
+        }
+        .health-button:hover {
+            background-color: #218838;
+        }
+        @media (max-width: 600px) {
+            .button-group {
+                flex-direction: column;
+            }
+            .button-group button {
+                width: 100%;
+                min-width: auto;
+            }
         }
         .response {
             margin-top: 20px;
@@ -113,17 +138,24 @@
                     required
                 />
             </div>
-            <button type="submit" id="submitBtn">Ask Physics Swarm</button>
+            <div class="button-group">
+                <button type="submit" id="submitBtn">🤔 Ask Physics Swarm</button>
+                <button type="button" id="healthBtn" class="health-button">💚 Check Health</button>
+            </div>
         </form>
         
         <div id="response" style="display: none;"></div>
     </div>
 
     <script>
+        // Detect if running on Vercel and adjust API base path
+        const isVercel = window.location.hostname.includes('.vercel.app') || window.location.hostname.includes('.now.sh');
+        const apiBase = isVercel ? '/api' : '';
+        
         // Check API status on page load
         async function checkApiStatus() {
             try {
-                const response = await fetch('/api/health');
+                const response = await fetch(`${apiBase}/health`);
                 const data = await response.json();
                 document.getElementById('apiStatus').textContent = `✅ ${data.status} - ${data.service}`;
                 document.getElementById('apiStatus').style.color = '#28a745';
@@ -132,6 +164,37 @@
                 document.getElementById('apiStatus').style.color = '#dc3545';
             }
         }
+
+        // Health check button functionality
+        document.getElementById('healthBtn').addEventListener('click', async function() {
+            const healthBtn = document.getElementById('healthBtn');
+            const responseDiv = document.getElementById('response');
+            
+            // Show loading state
+            healthBtn.disabled = true;
+            healthBtn.textContent = '🔄 Checking...';
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'response loading';
+            responseDiv.textContent = 'Checking API health status...';
+            
+            try {
+                const response = await fetch(`${apiBase}/health`);
+                const result = await response.json();
+                
+                responseDiv.className = 'response success';
+                responseDiv.textContent = `Health Check Results:\n${JSON.stringify(result, null, 2)}\n\nTimestamp: ${new Date().toLocaleString()}`;
+                
+                // Update status panel as well
+                checkApiStatus();
+                
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = `Health Check Failed:\n${error.message}\n\nTimestamp: ${new Date().toLocaleString()}`;
+            } finally {
+                healthBtn.disabled = false;
+                healthBtn.textContent = '💚 Check Health';
+            }
+        });
 
         document.getElementById('physicsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -142,13 +205,13 @@
             
             // Show loading state
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Processing...';
+            submitBtn.textContent = '🔄 Processing...';
             responseDiv.style.display = 'block';
             responseDiv.className = 'response loading';
             responseDiv.textContent = 'Consulting the physics swarm...';
             
             try {
-                const response = await fetch('/api/physics/query', {
+                const response = await fetch(`${apiBase}/physics/query`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -174,7 +237,7 @@
                 responseDiv.textContent = `Network Error: ${error.message}`;
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Ask Physics Swarm';
+                submitBtn.textContent = '🤔 Ask Physics Swarm';
             }
         });
 
