@@ -4,8 +4,9 @@
 // This script always returns exit code 1 to force builds
 // regardless of file changes
 
-console.log('🚀 Pantheon Physics Swarm - Force Build Check');
-console.log('===============================================');
+console.log('🚀 Pantheon Physics Swarm - RESET BUILD CHECK');
+console.log('==============================================');
+console.log('🔄 TRIGGER-005-RESET: Complete setup reset');
 
 const timestamp = new Date().toISOString();
 console.log(`Build check timestamp: ${timestamp}`);
@@ -21,6 +22,8 @@ console.log(`Commit SHA: ${commitSha}`);
 
 // Always exit with code 1 to force builds
 console.log('🔥 FORCING BUILD - Exit code 1');
-console.log('This ensures every push triggers a new deployment');
+console.log('📋 Framework Preset: Other');
+console.log('⚙️  Custom vercel.json configuration active');
+console.log('🚀 This ensures every push triggers a new deployment');
 
 process.exit(1); 
